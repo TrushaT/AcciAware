@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:acciaware/fetchroadfeatures.dart';
 import 'package:acciaware/getroads.dart';
 import 'package:acciaware/secrets.dart';
 import 'package:flutter/material.dart';
@@ -40,6 +41,7 @@ class MapView extends StatefulWidget {
 }
 
 class _MapViewState extends State<MapView> {
+  late List<dynamic> steps;
   // CameraPosition _initialLocation = const CameraPosition(target: LatLng(0.0, 0.0));
   late GoogleMapController mapController;
 
@@ -66,6 +68,7 @@ class _MapViewState extends State<MapView> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Services services = Services();
+  // RoadFeatures roadFeatures = RoadFeatures();
 
   Widget _textField({
     required TextEditingController controller,
@@ -305,12 +308,6 @@ class _MapViewState extends State<MapView> {
     double destinationLatitude,
     double destinationLongitude,
   ) async {
-    // PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-    //   Secrets.API_KEY, // Google Maps API Key
-    //   PointLatLng(startLatitude, startLongitude),
-    //   PointLatLng(destinationLatitude, destinationLongitude),
-    //   travelMode: TravelMode.driving,
-    // );
     // ignore: constant_identifier_names
 
     const String STATUS_OK = "ok";
@@ -328,9 +325,12 @@ class _MapViewState extends State<MapView> {
       result.errorMessage = values["error_message"];
     }
     print(result);
-    List<dynamic> instructions = values["routes"][0]["legs"][0]["steps"];
-    print("instructions");
-    print(instructions);
+
+    steps = values["routes"][0]["legs"][0]["steps"];
+    print("steps");
+    print(steps);
+
+    // roadFeatures.getRoadFeatures(steps);
 
     if (result.points.isNotEmpty) {
       for (var point in result.points) {
