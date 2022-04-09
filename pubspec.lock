@@ -157,7 +157,7 @@ packages:
     source: hosted
     version: "2.1.5"
   http:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http
       url: "https://pub.dartlang.org"
@@ -190,7 +190,7 @@ packages:
       name: location
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "4.3.0"
+    version: "4.0.0"
   location_platform_interface:
     dependency: transitive
     description:
@@ -204,7 +204,7 @@ packages:
       name: location_web
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.1.1"
+    version: "2.0.2"
   logger:
     dependency: "direct main"
     description:
@@ -324,4 +324,4 @@ packages:
     version: "2.0.1"
 sdks:
   dart: ">=2.17.0-182.1.beta <3.0.0"
-  flutter: ">=2.8.0"
+  flutter: ">=2.5.0"

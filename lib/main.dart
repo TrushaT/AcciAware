@@ -10,8 +10,8 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
-// import 'package:location/location.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(MyApp());
@@ -305,29 +305,38 @@ class _MapViewState extends State<MapView> {
     double destinationLatitude,
     double destinationLongitude,
   ) async {
+    // PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+    //   Secrets.API_KEY, // Google Maps API Key
+    //   PointLatLng(startLatitude, startLongitude),
+    //   PointLatLng(destinationLatitude, destinationLongitude),
+    //   travelMode: TravelMode.driving,
+    // );
+    // ignore: constant_identifier_names
 
-    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      Secrets.API_KEY, // Google Maps API Key
-      PointLatLng(startLatitude, startLongitude),
-      PointLatLng(destinationLatitude, destinationLongitude),
-      travelMode: TravelMode.driving,
-    );
+    const String STATUS_OK = "ok";
 
-   
+    Map values = await services.getDirectionsinfo(startLatitude, startLongitude,
+        destinationLatitude, destinationLongitude);
+    PolylineResult result = PolylineResult();
+    result.status = values["status"];
+    if (values["status"]?.toLowerCase() == STATUS_OK &&
+        values["routes"] != null &&
+        values["routes"].isNotEmpty) {
+      result.points = services.decodeEncodedPolyline(
+          values["routes"][0]["overview_polyline"]["points"]);
+    } else {
+      result.errorMessage = values["error_message"];
+    }
+    print(result);
+    List<dynamic> instructions = values["routes"][0]["legs"][0]["steps"];
+    print("instructions");
+    print(instructions);
+
     if (result.points.isNotEmpty) {
       for (var point in result.points) {
         polylineCoordinates.add(LatLng(point.latitude, point.longitude));
       }
     }
-
-    String instructions = await services.getRoads(startLatitude,startLongitude, destinationLatitude, destinationLongitude);
-
-    // ignore: avoid_print
-    print("INSTRUCTIONS");
-    // ignore: avoid_print
-    print(instructions);
-
-    
 
     PolylineId id = const PolylineId('poly');
     Polyline polyline = Polyline(
@@ -359,19 +368,18 @@ class _MapViewState extends State<MapView> {
           children: <Widget>[
             // child 1
             GoogleMap(
-              initialCameraPosition: const CameraPosition(
+              initialCameraPosition: CameraPosition(
                 target: LatLng(20.5937, 78.9629),
-                zoom: 6,
               ),
-              onMapCreated: (GoogleMapController controller) {
-                mapController = controller;
-              },
               myLocationEnabled: true,
               mapType: MapType.normal,
               zoomGesturesEnabled: true,
               zoomControlsEnabled: false,
               markers: Set<Marker>.from(markers),
               polylines: Set<Polyline>.of(polylines.values),
+              onMapCreated: (GoogleMapController controller) {
+                mapController = controller;
+              },
             ),
             // Show zoom buttons
 
