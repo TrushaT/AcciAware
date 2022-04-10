@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:acciaware/fetchroadfeatures.dart';
-import 'package:acciaware/infoservices.dart';
+import 'package:acciaware/fetch_features.dart';
+import 'package:acciaware/info_services.dart';
 import 'package:acciaware/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -330,7 +330,7 @@ class _MapViewState extends State<MapView> {
     print("steps");
     print(steps);
 
-   predictions = getRoadFeatures(steps);
+  //  predictions = getRoadFeatures(steps);
 
     if (result.points.isNotEmpty) {
       for (var point in result.points) {

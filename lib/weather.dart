@@ -61,18 +61,19 @@ Future<Position> _getGeoLocationPosition() async {
 }
 
 // Get weather data of user
-void getWeatherData() async {
+Future<Map<String, dynamic>> getWeatherData(var lat, var lon) async {
   const endPointUrl = 'https://api.openweathermap.org/data/2.5';
   const apiKey = "4aaa7189955f46d461aebab4a2b86f5f";
+  Map<String, dynamic> map;
 
-  Position currentCoordinates = await _getGeoLocationPosition();
-  var lat = currentCoordinates.latitude;
-  var lon = currentCoordinates.longitude;
-  print('lat: $lat');
-  print('lon: $lon');
+  // Position currentCoordinates = await _getGeoLocationPosition();
+  // var lat = currentCoordinates.latitude;
+  // var lon = currentCoordinates.longitude;
+  // print('lat: $lat');
+  // print('lon: $lon');
 
-  String address = await _getAddressFromLatLong(currentCoordinates);
-  print(address);
+  // String address = await _getAddressFromLatLong(currentCoordinates);
+  // print(address);
 
   var requestUrl =
       '$endPointUrl/weather?lat=$lat&lon=$lon&apikey=$apiKey&units=metric';
@@ -101,30 +102,30 @@ void getWeatherData() async {
       temp = _check(main, 'temp').toDouble();
       rhum = _check(main, 'humidity').toDouble();
       pres = _check(main, 'pressure').toDouble();
-      print('temp: $temp');
-      print('rhum: $rhum');
-      print('pres: $pres');
+      // print('temp: $temp');
+      // print('rhum: $rhum');
+      // print('pres: $pres');
     }
 
     if (attr.contains('wind')) {
       final wind = jsonResponse['wind'];
       wspd = _check(wind, 'speed').toDouble();
       wdir = _check(wind, 'deg').toDouble();
-      print('wspd: $wspd');
-      print('wdir: $wdir');
+      // print('wspd: $wspd');
+      // print('wdir: $wdir');
     }
 
     if (attr.contains('rain')) {
       final rain = jsonResponse['rain'];
       prcp = _check(rain, '1h').toDouble();
-      print('prcp: $prcp');
+      // print('prcp: $prcp');
       if (prcp == 0) {
         prcp = _check(rain, '3h').toDouble();
       }
-      print('prcp: $prcp');
+      // print('prcp: $prcp');
     } else {
       prcp = 0;
-      print('prcp: $prcp');
+      // print('prcp: $prcp');
     }
 
     if (attr.contains('weather')) {
@@ -239,7 +240,7 @@ void getWeatherData() async {
           coco = 4.0;
           break;
       }
-      print('coco: $coco');
+      // print('coco: $coco');
     }
 
     dwpt = ((temp -
@@ -248,7 +249,7 @@ void getWeatherData() async {
                 (15.9 + 0.117 * temp) * pow((1 - (0.01 * rhum)), 14))
             .round())
         .toDouble();
-    print('dwpt: $dwpt');
+    // print('dwpt: $dwpt');
 
     var currentDateTime =
         DateTime.fromMillisecondsSinceEpoch(jsonResponse['dt'] * 1000);
@@ -262,7 +263,7 @@ void getWeatherData() async {
     } else {
       light = 'night';
     }
-    print('light: $light');
+    // print('light: $light');
 
     if (coco == 5.0) {
       weather = 'fog';
@@ -283,10 +284,27 @@ void getWeatherData() async {
     } else {
       weather = 'None';
     }
-    print('weather: $weather');
+    // print('weather: $weather');
+
+    map = {
+      'temp': temp,
+      'dwpt': dwpt,
+      'rhum': rhum,
+      'prcp': prcp,
+      'wdir': wdir,
+      'wspd': wspd,
+      'pres': pres,
+      'coco': coco,
+      'light': light,
+      'weather': weather,
+      'error': 'None'
+    };
   } else {
     print('Request failed with status: ${response.statusCode}.');
+    map = {'error': '${response.statusCode}: ${response.reasonPhrase}'};
   }
+
+  return map;
 }
 
 /* void main(List<String> args) {
