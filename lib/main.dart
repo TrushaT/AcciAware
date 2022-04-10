@@ -330,7 +330,7 @@ class _MapViewState extends State<MapView> {
     print("steps");
     print(steps);
 
-    // roadFeatures.getRoadFeatures(steps);
+   predictions = getRoadFeatures(steps);
 
     if (result.points.isNotEmpty) {
       for (var point in result.points) {

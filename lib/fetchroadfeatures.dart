@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 // import 'package:acciaware/model_params.dart';
+import 'package:flutter/services.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -94,9 +95,7 @@ getRoadFeatures(List<dynamic> steps) async {
     }
   }
 
-  // ModelParams modelParams = ModelParams();
   // find features from roadData - name,shape_length,highway type
-
   for (var name in names) {
     double shapeLength = 0;
     String highway = "";
@@ -124,12 +123,13 @@ getRoadFeatures(List<dynamic> steps) async {
 // }
 Future<List> fetchcsv() async {
   List<dynamic> roadData = [];
-  final input =
-      File("C:/Users/trusha/Desktop/acciaware/assets/road_records.csv")
-          .openRead();
-  final fields = await input
-      .transform(utf8.decoder)
-      .transform(new LineSplitter())
+  // final input =
+  //     File("assets/road_records.csv")
+  //         .openRead();
+  final input = await  rootBundle.loadString('assets/road_records.csv');
+  LineSplitter ls = new LineSplitter();
+
+  final fields = ls.convert(input)
       .forEach((l) => roadData.add(l.split(',')));
   // print(fields);
   return roadData;
@@ -149,27 +149,27 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // home: Home(),
+      home: Home(),
     );
   }
 }
 
-// class Home extends StatefulWidget {
-//   const Home({Key? key}) : super(key: key);
+class Home extends StatefulWidget {
+  const Home({Key? key}) : super(key: key);
 
-//   @override
-//   State<Home> createState() => _HomeState();
-// }
+  @override
+  State<Home> createState() => _HomeState();
+}
 
-// class _HomeState extends State<Home> {
-//   @override
-//   void initState() {
-//     super.initState();
-//     WidgetsBinding.instance.addPostFrameCallback((_) => getRoadFeatures(steps));
-//   }
+class _HomeState extends State<Home> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => getRoadFeatures(steps));
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container();
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Container();
+  }
+}
