@@ -20,9 +20,8 @@ class Services {
     return values;
   }
 
-  Future<Map<String, dynamic>> getPrediction(
-      Map<String, dynamic> input) async {
-    String url = "http://127.0.0.1:8000/predict/";
+  Future<Map<String, dynamic>> getPrediction(Map<String, dynamic>? input) async {
+    String url = "https://acciaware-api.herokuapp.com/predict/";
     http.Response response = await http.post(Uri.parse(url), body: input);
     var values = jsonDecode(response.body);
     return values;

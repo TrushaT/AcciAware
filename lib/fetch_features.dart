@@ -145,9 +145,10 @@ dynamic getFeatures(List<dynamic> steps) async {
     features[name] = combinedWeatherRoadData;
 
     predictions[name] = await Services().getPrediction(features[name]);
+    print(predictions[name]);
   }
-  print(features);
-  return features;
+  print(predictions);
+  return predictions;
 }
 
 // Function to fetch data from CSV
