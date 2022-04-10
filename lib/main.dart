@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:acciaware/fetchroadfeatures.dart';
-import 'package:acciaware/infoservices.dart';
+import 'package:acciaware/fetch_features.dart';
+import 'package:acciaware/info_services.dart';
 import 'package:acciaware/secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

@@ -3,6 +3,7 @@ import 'dart:io';
 
 // import 'package:acciaware/model_params.dart';
 import 'package:acciaware/weather.dart';
+import 'package:acciaware/info_services.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -50,8 +51,8 @@ List<dynamic> steps = [
   }
 ];
 
-getFeatures(List<dynamic> steps) async {
-  // print(steps);
+dynamic getFeatures(List<dynamic> steps) async {
+  Map<String, dynamic>? predictions = {};
   List<dynamic> roadNames = [];
   for (var i = 0; i < steps.length; i++) {
     var singleIns = steps[i]["html_instructions"];
@@ -115,7 +116,7 @@ getFeatures(List<dynamic> steps) async {
     // print(highway);
     // print(shapeLength);
 
-    List<Location> locations = await locationFromAddress(name);
+    List<Location> locations = await locationFromAddress(name + ', Mumbai');
     var location = locations.first;
     var lat = location.latitude;
     var lon = location.longitude;
@@ -128,15 +129,25 @@ getFeatures(List<dynamic> steps) async {
       'highway': highway,
       'shape_length': shapeLength,
       'lat': lat,
-      'lon': lon
+      'lat_factor': (lat - lat.truncate()),
+      'lon': lon,
+      'lon_factor': (lon - lon.truncate()),
+      'police_station': await Services().getnearbyPoliceStation(lat, lon),
+      'zone': await Services().getZone(lat, lon)
     };
+    Map<String, dynamic> timeData = await Services().getTimeVariables();
+
     Map<String, dynamic> combinedWeatherRoadData = {};
     combinedWeatherRoadData.addAll(roadData);
     combinedWeatherRoadData.addAll(weatherData);
+    combinedWeatherRoadData.addAll(timeData);
 
     features[name] = combinedWeatherRoadData;
+
+    // predictions[name] = await Services().getPrediction(features[name]);
   }
   print(features);
+  return features;
 }
 
 // Function to fetch data from CSV

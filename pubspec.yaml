@@ -50,6 +50,7 @@ dependencies:
   http: ^0.13.4
   logger: ^1.1.0
   fuzzywuzzy: 0.1.6 # latest version
+  osm_nominatim: ^2.0.1
 
 
 dev_dependencies:
