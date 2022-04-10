@@ -1,6 +1,15 @@
+import 'dart:convert';
+import 'dart:io';
+
+// import 'package:acciaware/model_params.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
 import 'package:html/dom.dart';
+import 'package:fuzzywuzzy/fuzzywuzzy.dart';
+import 'package:csv/csv.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 List<dynamic> steps = [
   {
@@ -40,7 +49,7 @@ List<dynamic> steps = [
 ];
 
 // class RoadFeatures {
-getRoadFeatures(List<dynamic> steps) {
+getRoadFeatures(List<dynamic> steps) async {
   // print(steps);
   List<dynamic> roadNames = [];
   for (var i = 0; i < steps.length; i++) {
@@ -63,12 +72,104 @@ getRoadFeatures(List<dynamic> steps) {
     "east",
     "west"
   };
+  List roadData = await fetchcsv();
+  var choices = roadData.map<String>((row) => row[0]).toList(growable: false);
+  // print(choices);
+
   Set<dynamic> onlyRoads = roadNamesSet.difference(directions);
-  print(onlyRoads);
+  // print(onlyRoads);
+  List<dynamic> names = [];
+  for (var i = 0; i < onlyRoads.length; i++) {
+    print(onlyRoads.elementAt(i));
+    try {
+      var top = extractOne(
+        query: onlyRoads.elementAt(i),
+        choices: choices,
+        cutoff: 95,
+      ).toString();
+      // print(top.split(',')[0].substring(8));
+      names.add(top.split(',')[0].substring(8));
+    } catch (e) {
+      names.add("Unknown: " + onlyRoads.elementAt(i));
+    }
+  }
+
+  // ModelParams modelParams = ModelParams();
+  // find features from roadData - name,shape_length,highway type
+
+  for (var name in names) {
+    double shapeLength = 0;
+    String highway = "";
+    if (name.contains('Unknown:')) {
+      shapeLength = 583.668;
+      highway = "unclassified";
+    }
+    for (var row in roadData) {
+      if (name == row[0]) {
+        highway = row[1];
+        shapeLength = double.parse(row[2]);
+        break;
+      }
+    }
+    print(highway);
+    print(shapeLength);
+
+    List<Location> locations = await locationFromAddress(name);
+    var location = locations.first;
+    print(location.latitude);
+    print(location.longitude); // flutter run -t lib/demo.dart
+  }
 }
 
 // }
+Future<List> fetchcsv() async {
+  List<dynamic> roadData = [];
+  final input =
+      File("C:/Users/trusha/Desktop/acciaware/assets/road_records.csv")
+          .openRead();
+  final fields = await input
+      .transform(utf8.decoder)
+      .transform(new LineSplitter())
+      .forEach((l) => roadData.add(l.split(',')));
+  // print(fields);
+  return roadData;
+}
+
+// void main(List<String> args) {
+//   getRoadFeatures(steps);
+// }
 
 void main(List<String> args) {
-  getRoadFeatures(steps);
+  runApp(MyApp());
 }
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      // home: Home(),
+    );
+  }
+}
+
+// class Home extends StatefulWidget {
+//   const Home({Key? key}) : super(key: key);
+
+//   @override
+//   State<Home> createState() => _HomeState();
+// }
+
+// class _HomeState extends State<Home> {
+//   @override
+//   void initState() {
+//     super.initState();
+//     WidgetsBinding.instance.addPostFrameCallback((_) => getRoadFeatures(steps));
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container();
+//   }
+// }
