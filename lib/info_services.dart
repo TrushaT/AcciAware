@@ -20,23 +20,30 @@ class Services {
     return values;
   }
 
-  Future<Map<String, dynamic>> getPrediction(Map<String, dynamic>? input) async {
-    String url = "https://acciaware-api.herokuapp.com/predict/";
-    http.Response response = await http.post(Uri.parse(url), body: input);
+  Future<Map<String, dynamic>> getPrediction(
+      Map<String, dynamic>? input) async {
+    String url = "http://acciaware-api.herokuapp.com/predict/";
+    http.Response response = await http.post(
+      Uri.parse(url),
+      body: jsonEncode(input),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    );
     var values = jsonDecode(response.body);
     return values;
   }
 
-  Future<String> getnearbyPoliceStation(
-      double Latitude, double Longitude) async {
-    String url =
-        "https://maps.googleapis.com/maps/api/place/search/json?location=${Latitude},${Longitude}&rankby=distance&types=police&sensor=false&key=$apiKey";
-    http.Response response = await http.get(Uri.parse(url));
-    var values = jsonDecode(response.body);
-    // print(values["results"][0]["name"]);
-    var police_station = values["results"][0]["name"];
-    return police_station;
-  }
+  // Future<String> getnearbyPoliceStation(
+  //     double Latitude, double Longitude) async {
+  //   String url =
+  //       "https://maps.googleapis.com/maps/api/place/search/json?location=${Latitude},${Longitude}&rankby=distance&types=police&sensor=false&key=$apiKey";
+  //   http.Response response = await http.get(Uri.parse(url));
+  //   var values = jsonDecode(response.body);
+  //   // print(values["results"][0]["name"]);
+  //   var police_station = values["results"][0]["name"];
+  //   return police_station;
+  // }
 
   Future<String> getZone(double latitude, double longitude) async {
     final reverseSearchResult = await Nominatim.reverseSearch(
@@ -48,18 +55,21 @@ class Services {
     );
 
     String zone = reverseSearchResult.address?['city_district'];
-
+    if (!['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4', 'Zone 5', 'Zone 6']
+        .contains(zone)) {
+      zone = 'Unknown';
+    }
     return zone;
   }
 
   Map<String, dynamic> getTimeVariables() {
     DateTime now = DateTime.now();
     Map<String, dynamic> map = {};
-    map['hour'] = now.hour;
-    map['year'] = now.year;
-    map['month'] = now.month;
-    map['date'] = now.day;
-    map['day'] = now.weekday - 1;
+    map['hour'] = (now.hour).toDouble();
+    map['year'] = (now.year).toDouble();
+    map['month'] = (now.month).toDouble();
+    map['date'] = (now.day).toDouble();
+    map['day'] = (now.weekday - 1).toDouble();
     return map;
   }
 

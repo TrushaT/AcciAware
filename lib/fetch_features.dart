@@ -132,10 +132,11 @@ dynamic getFeatures(List<dynamic> steps) async {
       'lat_factor': (lat - lat.truncate()),
       'lon': lon,
       'lon_factor': (lon - lon.truncate()),
-      'police_station': await Services().getnearbyPoliceStation(lat, lon),
-      'zone': await Services().getZone(lat, lon)
+      // 'police_station': await Services().getnearbyPoliceStation(lat, lon),
+      'zone': await Services().getZone(lat, lon),
+      'type_of_collision': 'Unknown',
     };
-    Map<String, dynamic> timeData = await Services().getTimeVariables();
+    Map<String, dynamic> timeData = Services().getTimeVariables();
 
     Map<String, dynamic> combinedWeatherRoadData = {};
     combinedWeatherRoadData.addAll(roadData);
@@ -144,8 +145,10 @@ dynamic getFeatures(List<dynamic> steps) async {
 
     features[name] = combinedWeatherRoadData;
 
+    // print(features[name]);
+
     predictions[name] = await Services().getPrediction(features[name]);
-    print(predictions[name]);
+    // print(predictions[name]);
   }
   print(predictions);
   return predictions;
@@ -160,11 +163,7 @@ Future<List> fetchcsv() async {
   return roadsData;
 }
 
-// void main(List<String> args) {
-//   getFeatures(steps);
-// }
-
-void main(List<String> args) async {
+/* void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
@@ -199,3 +198,4 @@ class _HomeState extends State<Home> {
     return Container();
   }
 }
+ */

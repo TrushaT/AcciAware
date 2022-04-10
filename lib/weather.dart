@@ -297,7 +297,6 @@ Future<Map<String, dynamic>> getWeatherData(var lat, var lon) async {
       'coco': coco,
       'light': light,
       'weather': weather,
-      'error': 'None'
     };
   } else {
     print('Request failed with status: ${response.statusCode}.');
