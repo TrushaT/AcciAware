@@ -52,9 +52,8 @@ List<dynamic> steps = [
 ];
 
 Future<Map> getFeatures(List<dynamic> steps) async {
-
   Map<String, dynamic>? predictions = {};
-  
+
   List<dynamic> roadNames = [];
   for (var i = 0; i < steps.length; i++) {
     var singleIns = steps[i]["html_instructions"];
@@ -89,10 +88,11 @@ Future<Map> getFeatures(List<dynamic> steps) async {
       var top = extractOne(
         query: onlyRoads.elementAt(i),
         choices: choices,
-        cutoff: 95,
+        cutoff: 90,
       ).toString();
       // print(top.split(',')[0].substring(8));
       names.add(top.split(',')[0].substring(8));
+      print(top);
     } catch (e) {
       names.add("Unknown: " + onlyRoads.elementAt(i));
     }
@@ -147,13 +147,13 @@ Future<Map> getFeatures(List<dynamic> steps) async {
 
     features[name] = combinedWeatherRoadData;
 
-    // print(features[name]);
+    print('$name:\n${features[name]}');
 
     predictions[name] = await Services().getPrediction(features[name]);
     // print(predictions[name]);
   }
 //   print(predictions);
- return predictions;
+  return predictions;
 }
 
 // Function to fetch data from CSV

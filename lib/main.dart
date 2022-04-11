@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:acciaware/fetch_features.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 
 void main() {
   runApp(const MyApp());
@@ -47,7 +49,7 @@ class _MapViewState extends State<MapView> {
   final destinationAddressController = TextEditingController();
 
   final startAddressFocusNode = FocusNode();
-  final desrinationAddressFocusNode = FocusNode();
+  final destinationAddressFocusNode = FocusNode();
 
   String _startAddress = '';
   String _destinationAddress = '';
@@ -64,7 +66,30 @@ class _MapViewState extends State<MapView> {
 
   Services services = Services();
 
-  late Map<dynamic, dynamic> predictions;
+  Map<dynamic, dynamic> predictions = {};
+
+  String convertToTitleCase(String text) {
+    if (text.length <= 1) {
+      return text.toUpperCase();
+    }
+
+    // Split string into multiple words
+    final List<String> words = text.split(' ');
+
+    // Capitalize first letter of each words
+    final capitalizedWords = words.map((word) {
+      if (word.trim().isNotEmpty) {
+        final String firstLetter = word.trim().substring(0, 1).toUpperCase();
+        final String remainingLetters = word.trim().substring(1);
+
+        return '$firstLetter$remainingLetters';
+      }
+      return '';
+    });
+
+    // Join/Merge all words back to one String
+    return capitalizedWords.join(' ');
+  }
 
   Widget _textField({
     required TextEditingController controller,
@@ -198,7 +223,7 @@ class _MapViewState extends State<MapView> {
           title: 'Start $startCoordinatesString',
           snippet: _startAddress,
         ),
-        icon: BitmapDescriptor.defaultMarker,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
       );
 
       // Destination Location Marker
@@ -345,7 +370,7 @@ class _MapViewState extends State<MapView> {
     PolylineId id = const PolylineId('poly');
     Polyline polyline = Polyline(
       polylineId: id,
-      color: Colors.red,
+      color: Colors.blue,
       points: polylineCoordinates,
       width: 8,
     );
@@ -365,64 +390,393 @@ class _MapViewState extends State<MapView> {
     var width = MediaQuery.of(context).size.width;
 
     Widget _buildRow(String name) {
-      return ListTile(
-        title: Text(
-          name,
-          style: const TextStyle(fontSize: 18.0),
+      return Card(
+          elevation: 3,
+          child: ListTile(
+            title: Text(
+              (name.contains('Unknown:'))
+                  ? convertToTitleCase(name.substring(name.indexOf(':') + 2))
+                  : convertToTitleCase(name),
+              style: const TextStyle(fontSize: 18.0),
+            ),
+            subtitle: (predictions[name]["outcome"] == "Safe")
+                ? Text(
+                    predictions[name]["outcome"],
+                    style: const TextStyle(
+                      fontSize: 14.0,
+                      color: Colors.green,
+                    ),
+                  )
+                : Text(
+                    predictions[name]["outcome"],
+                    style: const TextStyle(
+                      fontSize: 14.0,
+                      color: Colors.red,
+                    ),
+                  ),
+            trailing: (predictions[name]["outcome"] == "Safe")
+                ? Text(
+                    predictions[name]["accident_chance"].toString() + "%",
+                    style: const TextStyle(
+                      fontSize: 18.0,
+                      color: Colors.green,
+                    ),
+                  )
+                : Text(
+                    predictions[name]["accident_chance"].toString() + "%",
+                    style: const TextStyle(
+                      fontSize: 18.0,
+                      color: Colors.red,
+                    ),
+                  ),
+          ));
+    }
+
+    Widget buildSheet() {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.85,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (_, controller) => Column(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    height: 5.0,
+                    width: 70.0,
+                    decoration: BoxDecoration(
+                        color: Colors.grey[400],
+                        borderRadius: BorderRadius.circular(10.0)),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'Roads with Accident Chance %',
+                    style: TextStyle(fontSize: 20),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
+            Expanded(
+              child: ListView.builder(
+                  controller: controller,
+                  itemCount: predictions.length * 2,
+                  padding: const EdgeInsets.all(16.0),
+                  itemBuilder: (BuildContext context, int i) {
+                    if (i.isOdd) {
+                      return const Divider();
+                    }
+                    final index = i ~/ 2;
+                    List keys = predictions.keys.toList();
+                    return _buildRow(keys[index]);
+                  }),
+            ),
+            const SizedBox(height: 16),
+          ],
         ),
-        trailing: Text(predictions[name]["accident_chance"].toString()+predictions[name]["outcome"]),
       );
     }
 
-    return SizedBox(
-      height: height,
-      width: width,
-      child: Scaffold(
-        body: Stack(
-          children: <Widget>[
-            // child 1
-            GoogleMap(
-              initialCameraPosition: const CameraPosition(
-                target: const LatLng(20.5937, 78.9629),
+    return LoaderOverlay(
+      child: SizedBox(
+        height: height,
+        width: width,
+        child: Scaffold(
+          body: Stack(
+            children: [
+              // child 1
+              GoogleMap(
+                initialCameraPosition: const CameraPosition(
+                  target: const LatLng(20.5937, 78.9629),
+                ),
+                myLocationEnabled: true,
+                mapType: MapType.normal,
+                zoomGesturesEnabled: true,
+                zoomControlsEnabled: false,
+                markers: Set<Marker>.from(markers),
+                polylines: Set<Polyline>.of(polylines.values),
+                onMapCreated: (GoogleMapController controller) {
+                  mapController = controller;
+                },
               ),
-              myLocationEnabled: true,
-              mapType: MapType.normal,
-              zoomGesturesEnabled: true,
-              zoomControlsEnabled: false,
-              markers: Set<Marker>.from(markers),
-              polylines: Set<Polyline>.of(polylines.values),
-              onMapCreated: (GoogleMapController controller) {
-                mapController = controller;
-              },
-            ),
-            // Show zoom buttons
 
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 10.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    ClipOval(
-                      child: Material(
-                        color: Colors.blue.shade100, // button color
-                        child: InkWell(
-                          splashColor: Colors.blue, // inkwell color
-                          child: const SizedBox(
-                            width: 50,
-                            height: 50,
-                            child: Icon(Icons.add),
+              // Show zoom buttons
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 10.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      ClipOval(
+                        child: Material(
+                          color: Colors.blue.shade100, // button color
+                          child: InkWell(
+                            splashColor: Colors.blue, // inkwell color
+                            child: const SizedBox(
+                              width: 50,
+                              height: 50,
+                              child: Icon(Icons.zoom_in),
+                            ),
+                            onTap: () {
+                              mapController.animateCamera(
+                                CameraUpdate.zoomIn(),
+                              );
+                            },
                           ),
-                          onTap: () {
-                            mapController.animateCamera(
-                              CameraUpdate.zoomIn(),
-                            );
-                          },
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      ClipOval(
+                        child: Material(
+                          color: Colors.blue.shade100, // button color
+                          child: InkWell(
+                            splashColor: Colors.blue, // inkwell color
+                            child: const SizedBox(
+                              width: 50,
+                              height: 50,
+                              child: Icon(Icons.zoom_out),
+                            ),
+                            onTap: () {
+                              // on button tap
+                              mapController.animateCamera(
+                                CameraUpdate.zoomOut(),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Show the place input fields & button for
+              // showing the route
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white70,
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(20.0),
+                        ),
+                      ),
+                      width: width * 0.9,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 10.0, bottom: 10.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const Text(
+                              'AcciAware',
+                              style: TextStyle(fontSize: 20.0),
+                            ),
+                            const SizedBox(height: 10),
+                            _textField(
+                                label: 'Start',
+                                hint: 'Choose starting point',
+                                prefixIcon: const Icon(Icons.looks_one),
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.my_location),
+                                  onPressed: () {
+                                    startAddressController.text =
+                                        _currentAddress;
+                                    _startAddress = _currentAddress;
+                                  },
+                                ),
+                                controller: startAddressController,
+                                focusNode: startAddressFocusNode,
+                                width: width,
+                                locationCallback: (String value) {
+                                  setState(() {
+                                    _startAddress = value;
+                                  });
+                                }),
+                            const SizedBox(height: 10),
+                            _textField(
+                                label: 'Destination',
+                                hint: 'Choose destination',
+                                prefixIcon: const Icon(Icons.looks_two),
+                                controller: destinationAddressController,
+                                focusNode: destinationAddressFocusNode,
+                                width: width,
+                                locationCallback: (String value) {
+                                  setState(() {
+                                    _destinationAddress = value;
+                                  });
+                                }),
+                            const SizedBox(height: 10),
+                            Visibility(
+                              visible: _placeDistance == null ? false : true,
+                              child: Text(
+                                'DISTANCE: $_placeDistance km',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: (_startAddress != '' &&
+                                          _destinationAddress != '')
+                                      ? () {
+                                          context.loaderOverlay.show();
+                                          startAddressFocusNode.unfocus();
+                                          destinationAddressFocusNode.unfocus();
+                                          setState(() {
+                                            if (markers.isNotEmpty)
+                                              markers.clear();
+                                            if (polylines.isNotEmpty) {
+                                              polylines.clear();
+                                            }
+                                            if (polylineCoordinates
+                                                .isNotEmpty) {
+                                              polylineCoordinates.clear();
+                                            }
+                                            _placeDistance = null;
+                                          });
+                                          _calculateDistance()
+                                              .then((isCalculated) {
+                                            if (isCalculated) {
+                                              context.loaderOverlay.hide();
+                                              // ScaffoldMessenger.of(context)
+                                              //     .showSnackBar(
+                                              //   const SnackBar(
+                                              //     content: Text(
+                                              //         'Distance Calculated Sucessfully'),
+                                              //   ),
+                                              // );
+                                              // showModalBottomSheet(
+                                              //     context: context,
+                                              //     isScrollControlled: true,
+                                              //     isDismissible: true,
+                                              //     shape:
+                                              //         const RoundedRectangleBorder(
+                                              //             borderRadius:
+                                              //                 BorderRadius.vertical(
+                                              //                     top: Radius
+                                              //                         .circular(
+                                              //                             16))),
+                                              //     builder: (context) {
+                                              //       return buildSheet();
+                                              //     });
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                      'Error Calculating Distance'),
+                                                ),
+                                              );
+                                              context.loaderOverlay.hide();
+                                            }
+                                          });
+                                        }
+                                      : null,
+                                  // color: Colors.red,
+                                  // shape: RoundedRectangleBorder(
+                                  //   borderRadius: BorderRadius.circular(20.0),
+                                  // ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(6.0),
+                                    child: Text(
+                                      'Show Route'.toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16.0,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  onPressed: (_startAddress != '' &&
+                                          _destinationAddress != '')
+                                      ? () {
+                                          (predictions.isNotEmpty)
+                                              ? showModalBottomSheet(
+                                                  context: context,
+                                                  isScrollControlled: true,
+                                                  isDismissible: true,
+                                                  shape: const RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.vertical(
+                                                              top: Radius
+                                                                  .circular(
+                                                                      16))),
+                                                  builder: (context) {
+                                                    return buildSheet();
+                                                  })
+                                              : ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                  SnackBar(
+                                                    content: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: const [
+                                                        Icon(
+                                                          Icons.warning,
+                                                          color: Colors.red,
+                                                        ),
+                                                        SizedBox(width: 15),
+                                                        Text(
+                                                          'First Click Show Route then Show Roads',
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.white),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                );
+                                        }
+                                      : null,
+                                  // color: Colors.red,
+                                  // shape: RoundedRectangleBorder(
+                                  //   borderRadius: BorderRadius.circular(20.0),
+                                  // ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(6.0),
+                                    child: Text(
+                                      'Show Roads'.toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16.0,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    ClipOval(
+                  ),
+                ),
+              ),
+
+              // Show current location button
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 10.0, bottom: 10.0),
+                    child: ClipOval(
                       child: Material(
                         color: Colors.orange.shade100, // button color
                         child: InkWell(
@@ -433,211 +787,27 @@ class _MapViewState extends State<MapView> {
                             child: Icon(Icons.my_location),
                           ),
                           onTap: () {
-                            // on button tap
                             mapController.animateCamera(
-                              CameraUpdate.zoomOut(),
+                              CameraUpdate.newCameraPosition(
+                                CameraPosition(
+                                  target: LatLng(
+                                    _currentPosition.latitude,
+                                    _currentPosition.longitude,
+                                  ),
+                                  zoom: 18.0,
+                                ),
+                              ),
                             );
                           },
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Show the place input fields & button for
-            // showing the route
-            SafeArea(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 10.0),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white70,
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(20.0),
-                      ),
-                    ),
-                    width: width * 0.9,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 10.0, bottom: 10.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          const Text(
-                            'Places',
-                            style: TextStyle(fontSize: 20.0),
-                          ),
-                          const SizedBox(height: 10),
-                          _textField(
-                              label: 'Start',
-                              hint: 'Choose starting point',
-                              prefixIcon: const Icon(Icons.looks_one),
-                              suffixIcon: IconButton(
-                                icon: const Icon(Icons.my_location),
-                                onPressed: () {
-                                  startAddressController.text = _currentAddress;
-                                  _startAddress = _currentAddress;
-                                },
-                              ),
-                              controller: startAddressController,
-                              focusNode: startAddressFocusNode,
-                              width: width,
-                              locationCallback: (String value) {
-                                setState(() {
-                                  _startAddress = value;
-                                });
-                              }),
-                          const SizedBox(height: 10),
-                          _textField(
-                              label: 'Destination',
-                              hint: 'Choose destination',
-                              prefixIcon: const Icon(Icons.looks_two),
-                              controller: destinationAddressController,
-                              focusNode: desrinationAddressFocusNode,
-                              width: width,
-                              locationCallback: (String value) {
-                                setState(() {
-                                  _destinationAddress = value;
-                                });
-                              }),
-                          const SizedBox(height: 10),
-                          Visibility(
-                            visible: _placeDistance == null ? false : true,
-                            child: Text(
-                              'DISTANCE: $_placeDistance km',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          ElevatedButton(
-                            onPressed: (_startAddress != '' &&
-                                    _destinationAddress != '')
-                                ? () {
-                                    startAddressFocusNode.unfocus();
-                                    desrinationAddressFocusNode.unfocus();
-                                    setState(() {
-                                      if (markers.isNotEmpty) markers.clear();
-                                      if (polylines.isNotEmpty) {
-                                        polylines.clear();
-                                      }
-                                      if (polylineCoordinates.isNotEmpty) {
-                                        polylineCoordinates.clear();
-                                      }
-                                      _placeDistance = null;
-                                    });
-                                    _calculateDistance().then((isCalculated) {
-                                      if (isCalculated) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Distance Calculated Sucessfully'),
-                                          ),
-                                        );
-                                        showModalBottomSheet(
-                                            context: context,
-                                            isScrollControlled: true,
-                                            isDismissible: true,
-                                            shape: const RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.vertical(
-                                                        top: Radius.circular(
-                                                            16))),
-                                            builder: (context) {
-                                              return ListView.builder(
-                                                  itemCount:
-                                                      predictions.length * 2,
-                                                  padding: const EdgeInsets.all(
-                                                      16.0),
-                                                  itemBuilder:
-                                                      (BuildContext context,
-                                                          int i) {
-                                                    if (i.isOdd) {
-                                                      return const Divider();
-                                                    }
-                                                    final index = i ~/ 2;
-                                                    List keys = predictions.keys
-                                                        .toList();
-                                                    return _buildRow(keys[index]);
-                                                  });
-                                            });
-                                      } else {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Error Calculating Distance'),
-                                          ),
-                                        );
-                                      }
-                                    });
-                                  }
-                                : null,
-                            // color: Colors.red,
-                            // shape: RoundedRectangleBorder(
-                            //   borderRadius: BorderRadius.circular(20.0),
-                            // ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                'Show Route'.toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20.0,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               ),
-            ),
-
-            // Show current location button
-            SafeArea(
-              child: Align(
-                alignment: Alignment.bottomRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 10.0, bottom: 10.0),
-                  child: ClipOval(
-                    child: Material(
-                      color: Colors.orange.shade100, // button color
-                      child: InkWell(
-                        splashColor: Colors.orange, // inkwell color
-                        child: const SizedBox(
-                          width: 56,
-                          height: 56,
-                          child: Icon(Icons.my_location),
-                        ),
-                        onTap: () {
-                          mapController.animateCamera(
-                            CameraUpdate.newCameraPosition(
-                              CameraPosition(
-                                target: LatLng(
-                                  _currentPosition.latitude,
-                                  _currentPosition.longitude,
-                                ),
-                                zoom: 18.0,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
+          resizeToAvoidBottomInset: false,
         ),
       ),
     );
