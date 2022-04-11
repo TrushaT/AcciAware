@@ -51,8 +51,10 @@ List<dynamic> steps = [
   }
 ];
 
-dynamic getFeatures(List<dynamic> steps) async {
+Future<Map> getFeatures(List<dynamic> steps) async {
+
   Map<String, dynamic>? predictions = {};
+  
   List<dynamic> roadNames = [];
   for (var i = 0; i < steps.length; i++) {
     var singleIns = steps[i]["html_instructions"];
@@ -150,8 +152,8 @@ dynamic getFeatures(List<dynamic> steps) async {
     predictions[name] = await Services().getPrediction(features[name]);
     // print(predictions[name]);
   }
-  print(predictions);
-  return predictions;
+//   print(predictions);
+ return predictions;
 }
 
 // Function to fetch data from CSV

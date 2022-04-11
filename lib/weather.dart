@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 
-// Utility function for getWeatherData
+//Utility function for getWeatherData
 dynamic _check(Map feature, String subFeature) {
   if (feature.keys.contains(subFeature)) {
     return feature[subFeature];
@@ -15,50 +15,50 @@ dynamic _check(Map feature, String subFeature) {
   return 0;
 }
 
-// Get address from latitude and longitude
-Future<String> _getAddressFromLatLong(Position position) async {
-  List<Placemark> placemarks =
-      await placemarkFromCoordinates(position.latitude, position.longitude);
-  Placemark place = placemarks[0];
-  String address =
-      '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
-  return address;
-}
+// // Get address from latitude and longitude
+// Future<String> _getAddressFromLatLong(Position position) async {
+//   List<Placemark> placemarks =
+//       await placemarkFromCoordinates(position.latitude, position.longitude);
+//   Placemark place = placemarks[0];
+//   String address =
+//       '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+//   return address;
+// }
 
-// Get latitude and longitude of user
-Future<Position> _getGeoLocationPosition() async {
-  bool serviceEnabled;
-  LocationPermission permission;
+// // Get latitude and longitude of user
+// Future<Position> _getGeoLocationPosition() async {
+//   bool serviceEnabled;
+//   LocationPermission permission;
 
-  // Test if location services are enabled.
-  serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  if (!serviceEnabled) {
-    // Location services are not enabled don't continue
-    // accessing the position and request users of the
-    // App to enable the location services.
-    await Geolocator.openLocationSettings();
-    return Future.error('Location services are disabled.');
-  }
+//   // Test if location services are enabled.
+//   serviceEnabled = await Geolocator.isLocationServiceEnabled();
+//   if (!serviceEnabled) {
+//     // Location services are not enabled don't continue
+//     // accessing the position and request users of the
+//     // App to enable the location services.
+//     await Geolocator.openLocationSettings();
+//     return Future.error('Location services are disabled.');
+//   }
 
-  permission = await Geolocator.checkPermission();
-  if (permission == LocationPermission.denied) {
-    permission = await Geolocator.requestPermission();
-    if (permission == LocationPermission.denied) {
-      return Future.error('Location permissions are denied');
-    }
-  }
+//   permission = await Geolocator.checkPermission();
+//   if (permission == LocationPermission.denied) {
+//     permission = await Geolocator.requestPermission();
+//     if (permission == LocationPermission.denied) {
+//       return Future.error('Location permissions are denied');
+//     }
+//   }
 
-  if (permission == LocationPermission.deniedForever) {
-    // Permissions are denied forever, handle appropriately.
-    return Future.error(
-        'Location permissions are permanently denied, we cannot request permissions.');
-  }
+//   if (permission == LocationPermission.deniedForever) {
+//     // Permissions are denied forever, handle appropriately.
+//     return Future.error(
+//         'Location permissions are permanently denied, we cannot request permissions.');
+//   }
 
-  // When we reach here, permissions are granted and we can
-  // continue accessing the position of the device.
-  return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high);
-}
+//   // When we reach here, permissions are granted and we can
+//   // continue accessing the position of the device.
+//   return await Geolocator.getCurrentPosition(
+//       desiredAccuracy: LocationAccuracy.high);
+// }
 
 // Get weather data of user
 Future<Map<String, dynamic>> getWeatherData(var lat, var lon) async {

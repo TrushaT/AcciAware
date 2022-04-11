@@ -1,21 +1,16 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:acciaware/fetch_features.dart';
 import 'package:acciaware/info_services.dart';
-import 'package:acciaware/secrets.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -68,7 +63,8 @@ class _MapViewState extends State<MapView> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Services services = Services();
-  // RoadFeatures roadFeatures = RoadFeatures();
+
+  late Map<dynamic, dynamic> predictions;
 
   Widget _textField({
     required TextEditingController controller,
@@ -88,7 +84,7 @@ class _MapViewState extends State<MapView> {
         },
         controller: controller,
         focusNode: focusNode,
-        decoration: new InputDecoration(
+        decoration: InputDecoration(
           prefixIcon: prefixIcon,
           suffixIcon: suffixIcon,
           labelText: label,
@@ -104,15 +100,15 @@ class _MapViewState extends State<MapView> {
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              const Radius.circular(10.0),
+            borderRadius: const BorderRadius.all(
+              Radius.circular(10.0),
             ),
             borderSide: BorderSide(
               color: Colors.blue.shade300,
               width: 2,
             ),
           ),
-          contentPadding: EdgeInsets.all(15),
+          contentPadding: const EdgeInsets.all(15),
           hintText: hint,
         ),
       ),
@@ -126,7 +122,7 @@ class _MapViewState extends State<MapView> {
       setState(() {
         _currentPosition = position;
         // ignore: avoid_print
-        print('CURRENT POS: $_currentPosition');
+        // print('CURRENT POS: $_currentPosition');
         mapController.animateCamera(
           CameraUpdate.newCameraPosition(
             CameraPosition(
@@ -158,6 +154,7 @@ class _MapViewState extends State<MapView> {
         _startAddress = _currentAddress;
       });
     } catch (e) {
+      // ignore: avoid_print
       print(e);
     }
   }
@@ -166,8 +163,12 @@ class _MapViewState extends State<MapView> {
   Future<bool> _calculateDistance() async {
     try {
       // Retrieving placemarks from addresses
-      List<Location>? startPlacemark = await locationFromAddress(_startAddress);
-      List<Location>? destinationPlacemark =
+      // print("START_aDDRESS");
+      // print(_startAddress);
+      // print(_destinationAddress);
+
+      List<Location> startPlacemark = await locationFromAddress(_startAddress);
+      List<Location> destinationPlacemark =
           await locationFromAddress(_destinationAddress);
 
       // Use the retrieved coordinates of the current position,
@@ -215,11 +216,11 @@ class _MapViewState extends State<MapView> {
       markers.add(startMarker);
       markers.add(destinationMarker);
 
-      print(
-        'START COORDINATES: ($startLatitude, $startLongitude)',
-      );
-      print(
-          'DESTINATION COORDINATES: ($destinationLatitude, $destinationLongitude)');
+      // print(
+      //   'START COORDINATES: ($startLatitude, $startLongitude)',
+      // );
+      // print(
+      //     'DESTINATION COORDINATES: ($destinationLatitude, $destinationLongitude)');
 
       // Calculating to check that the position relative
       // to the frame, and pan & zoom the camera accordingly.
@@ -280,11 +281,12 @@ class _MapViewState extends State<MapView> {
       }
       setState(() {
         _placeDistance = totalDistance.toStringAsFixed(2);
-        print('DISTANCE: $_placeDistance km');
+        // print('DISTANCE: $_placeDistance km');
       });
 
       return true;
     } catch (e) {
+      print("ERROR CALCULATING DISTANCE");
       print(e);
     }
     return false;
@@ -324,15 +326,15 @@ class _MapViewState extends State<MapView> {
     } else {
       result.errorMessage = values["error_message"];
     }
-    print(result);
+    // print(result);
 
     steps = values["routes"][0]["legs"][0]["steps"];
-    print("steps");
-    print(steps);
+    // print("steps");
+    //   print(steps);
 
-    Map<String, dynamic> predictions = {};
-    
-    predictions = getFeatures(steps);
+    predictions = await getFeatures(steps);
+
+    print(predictions);
 
     if (result.points.isNotEmpty) {
       for (var point in result.points) {
@@ -362,6 +364,16 @@ class _MapViewState extends State<MapView> {
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
 
+    Widget _buildRow(String name) {
+      return ListTile(
+        title: Text(
+          name,
+          style: const TextStyle(fontSize: 18.0),
+        ),
+        trailing: Text(predictions[name]["accident_chance"].toString()+predictions[name]["outcome"]),
+      );
+    }
+
     return SizedBox(
       height: height,
       width: width,
@@ -370,8 +382,8 @@ class _MapViewState extends State<MapView> {
           children: <Widget>[
             // child 1
             GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: LatLng(20.5937, 78.9629),
+              initialCameraPosition: const CameraPosition(
+                target: const LatLng(20.5937, 78.9629),
               ),
               myLocationEnabled: true,
               mapType: MapType.normal,
@@ -396,7 +408,7 @@ class _MapViewState extends State<MapView> {
                         color: Colors.blue.shade100, // button color
                         child: InkWell(
                           splashColor: Colors.blue, // inkwell color
-                          child: SizedBox(
+                          child: const SizedBox(
                             width: 50,
                             height: 50,
                             child: Icon(Icons.add),
@@ -409,13 +421,13 @@ class _MapViewState extends State<MapView> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     ClipOval(
                       child: Material(
                         color: Colors.orange.shade100, // button color
                         child: InkWell(
                           splashColor: Colors.orange, // inkwell color
-                          child: SizedBox(
+                          child: const SizedBox(
                             width: 56,
                             height: 56,
                             child: Icon(Icons.my_location),
@@ -442,7 +454,7 @@ class _MapViewState extends State<MapView> {
                 child: Padding(
                   padding: const EdgeInsets.only(top: 10.0),
                   child: Container(
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: Colors.white70,
                       borderRadius: BorderRadius.all(
                         Radius.circular(20.0),
@@ -454,17 +466,17 @@ class _MapViewState extends State<MapView> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          Text(
+                          const Text(
                             'Places',
                             style: TextStyle(fontSize: 20.0),
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           _textField(
                               label: 'Start',
                               hint: 'Choose starting point',
-                              prefixIcon: Icon(Icons.looks_one),
+                              prefixIcon: const Icon(Icons.looks_one),
                               suffixIcon: IconButton(
-                                icon: Icon(Icons.my_location),
+                                icon: const Icon(Icons.my_location),
                                 onPressed: () {
                                   startAddressController.text = _currentAddress;
                                   _startAddress = _currentAddress;
@@ -478,11 +490,11 @@ class _MapViewState extends State<MapView> {
                                   _startAddress = value;
                                 });
                               }),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           _textField(
                               label: 'Destination',
                               hint: 'Choose destination',
-                              prefixIcon: Icon(Icons.looks_two),
+                              prefixIcon: const Icon(Icons.looks_two),
                               controller: destinationAddressController,
                               focusNode: desrinationAddressFocusNode,
                               width: width,
@@ -506,7 +518,7 @@ class _MapViewState extends State<MapView> {
                           ElevatedButton(
                             onPressed: (_startAddress != '' &&
                                     _destinationAddress != '')
-                                ? () async {
+                                ? () {
                                     startAddressFocusNode.unfocus();
                                     desrinationAddressFocusNode.unfocus();
                                     setState(() {
@@ -519,7 +531,6 @@ class _MapViewState extends State<MapView> {
                                       }
                                       _placeDistance = null;
                                     });
-
                                     _calculateDistance().then((isCalculated) {
                                       if (isCalculated) {
                                         ScaffoldMessenger.of(context)
@@ -529,6 +540,33 @@ class _MapViewState extends State<MapView> {
                                                 'Distance Calculated Sucessfully'),
                                           ),
                                         );
+                                        showModalBottomSheet(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            isDismissible: true,
+                                            shape: const RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.vertical(
+                                                        top: Radius.circular(
+                                                            16))),
+                                            builder: (context) {
+                                              return ListView.builder(
+                                                  itemCount:
+                                                      predictions.length * 2,
+                                                  padding: const EdgeInsets.all(
+                                                      16.0),
+                                                  itemBuilder:
+                                                      (BuildContext context,
+                                                          int i) {
+                                                    if (i.isOdd) {
+                                                      return const Divider();
+                                                    }
+                                                    final index = i ~/ 2;
+                                                    List keys = predictions.keys
+                                                        .toList();
+                                                    return _buildRow(keys[index]);
+                                                  });
+                                            });
                                       } else {
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
