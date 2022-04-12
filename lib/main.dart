@@ -38,7 +38,6 @@ class MapView extends StatefulWidget {
 }
 
 class _MapViewState extends State<MapView> {
-  late List<dynamic> steps;
   // CameraPosition _initialLocation = const CameraPosition(target: LatLng(0.0, 0.0));
   late GoogleMapController mapController;
 
@@ -66,7 +65,10 @@ class _MapViewState extends State<MapView> {
 
   Services services = Services();
 
+  Map values = {};
+  List<dynamic> steps = [];
   Map<dynamic, dynamic> predictions = {};
+  bool predictionsMadeOnce = false;
 
   String convertToTitleCase(String text) {
     if (text.length <= 1) {
@@ -187,11 +189,6 @@ class _MapViewState extends State<MapView> {
   // Method for calculating the distance between two places
   Future<bool> _calculateDistance() async {
     try {
-      // Retrieving placemarks from addresses
-      // print("START_aDDRESS");
-      // print(_startAddress);
-      // print(_destinationAddress);
-
       List<Location> startPlacemark = await locationFromAddress(_startAddress);
       List<Location> destinationPlacemark =
           await locationFromAddress(_destinationAddress);
@@ -241,12 +238,6 @@ class _MapViewState extends State<MapView> {
       markers.add(startMarker);
       markers.add(destinationMarker);
 
-      // print(
-      //   'START COORDINATES: ($startLatitude, $startLongitude)',
-      // );
-      // print(
-      //     'DESTINATION COORDINATES: ($destinationLatitude, $destinationLongitude)');
-
       // Calculating to check that the position relative
       // to the frame, and pan & zoom the camera accordingly.
       double miny = (startLatitude <= destinationLatitude)
@@ -276,27 +267,18 @@ class _MapViewState extends State<MapView> {
             northeast: LatLng(northEastLatitude, northEastLongitude),
             southwest: LatLng(southWestLatitude, southWestLongitude),
           ),
-          100.0,
+          150.0,
         ),
       );
-
-      // Calculating the distance between the start and the end positions
-      // with a straight path, without considering any route
-      // double distanceInMeters = await Geolocator().bearingBetween(
-      //   startCoordinates.latitude,
-      //   startCoordinates.longitude,
-      //   destinationCoordinates.latitude,
-      //   destinationCoordinates.longitude,
-      // );
 
       await _createPolylines(startLatitude, startLongitude, destinationLatitude,
           destinationLongitude);
 
-      double totalDistance = 0.0;
+      // double totalDistance = 0.0;
 
       // Calculating the total distance by adding the distance
       // between small segments
-      for (int i = 0; i < polylineCoordinates.length - 1; i++) {
+      /* for (int i = 0; i < polylineCoordinates.length - 1; i++) {
         totalDistance += _coordinateDistance(
           polylineCoordinates[i].latitude,
           polylineCoordinates[i].longitude,
@@ -306,8 +288,7 @@ class _MapViewState extends State<MapView> {
       }
       setState(() {
         _placeDistance = totalDistance.toStringAsFixed(2);
-        // print('DISTANCE: $_placeDistance km');
-      });
+      }); */
 
       return true;
     } catch (e) {
@@ -319,13 +300,20 @@ class _MapViewState extends State<MapView> {
 
   // Formula for calculating distance between two coordinates
   // https://stackoverflow.com/a/54138876/11910277
-  double _coordinateDistance(lat1, lon1, lat2, lon2) {
+  /*  double _coordinateDistance(lat1, lon1, lat2, lon2) {
     var p = 0.017453292519943295;
     var c = cos;
     var a = 0.5 -
         c((lat2 - lat1) * p) / 2 +
         c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
     return 12742 * asin(sqrt(a));
+  } */
+
+// Get predictions for a route
+  getPredictions() async {
+    var preds = await getFeatures(steps);
+    print(preds);
+    return preds;
   }
 
 // Create the polylines for showing the route between two places
@@ -335,11 +323,9 @@ class _MapViewState extends State<MapView> {
     double destinationLatitude,
     double destinationLongitude,
   ) async {
-    // ignore: constant_identifier_names
-
     const String STATUS_OK = "ok";
 
-    Map values = await services.getDirectionsinfo(startLatitude, startLongitude,
+    values = await services.getDirectionsinfo(startLatitude, startLongitude,
         destinationLatitude, destinationLongitude);
     PolylineResult result = PolylineResult();
     result.status = values["status"];
@@ -348,18 +334,18 @@ class _MapViewState extends State<MapView> {
         values["routes"].isNotEmpty) {
       result.points = services.decodeEncodedPolyline(
           values["routes"][0]["overview_polyline"]["points"]);
+      setState(() {
+        _placeDistance =
+            (values["routes"][0]["legs"][0]["distance"]["value"] / 1000)
+                .toStringAsFixed(2);
+      });
     } else {
       result.errorMessage = values["error_message"];
     }
     // print(result);
 
     steps = values["routes"][0]["legs"][0]["steps"];
-    // print("steps");
-    //   print(steps);
-
-    predictions = await getFeatures(steps);
-
-    print(predictions);
+    // print(steps);
 
     if (result.points.isNotEmpty) {
       for (var point in result.points) {
@@ -586,7 +572,10 @@ class _MapViewState extends State<MapView> {
                             _textField(
                                 label: 'Start',
                                 hint: 'Choose starting point',
-                                prefixIcon: const Icon(Icons.looks_one),
+                                prefixIcon: const Icon(
+                                  Icons.looks_one,
+                                  color: Colors.blue,
+                                ),
                                 suffixIcon: IconButton(
                                   icon: const Icon(Icons.my_location),
                                   onPressed: () {
@@ -601,19 +590,26 @@ class _MapViewState extends State<MapView> {
                                 locationCallback: (String value) {
                                   setState(() {
                                     _startAddress = value;
+                                    predictionsMadeOnce = false;
+                                    steps.clear();
                                   });
                                 }),
                             const SizedBox(height: 10),
                             _textField(
                                 label: 'Destination',
                                 hint: 'Choose destination',
-                                prefixIcon: const Icon(Icons.looks_two),
+                                prefixIcon: const Icon(
+                                  Icons.looks_two,
+                                  color: Colors.red,
+                                ),
                                 controller: destinationAddressController,
                                 focusNode: destinationAddressFocusNode,
                                 width: width,
                                 locationCallback: (String value) {
                                   setState(() {
                                     _destinationAddress = value;
+                                    predictionsMadeOnce = false;
+                                    steps.clear();
                                   });
                                 }),
                             const SizedBox(height: 10),
@@ -635,7 +631,7 @@ class _MapViewState extends State<MapView> {
                                   onPressed: (_startAddress != '' &&
                                           _destinationAddress != '')
                                       ? () {
-                                          context.loaderOverlay.show();
+                                          // context.loaderOverlay.show();
                                           startAddressFocusNode.unfocus();
                                           destinationAddressFocusNode.unfocus();
                                           setState(() {
@@ -653,28 +649,7 @@ class _MapViewState extends State<MapView> {
                                           _calculateDistance()
                                               .then((isCalculated) {
                                             if (isCalculated) {
-                                              context.loaderOverlay.hide();
-                                              // ScaffoldMessenger.of(context)
-                                              //     .showSnackBar(
-                                              //   const SnackBar(
-                                              //     content: Text(
-                                              //         'Distance Calculated Sucessfully'),
-                                              //   ),
-                                              // );
-                                              // showModalBottomSheet(
-                                              //     context: context,
-                                              //     isScrollControlled: true,
-                                              //     isDismissible: true,
-                                              //     shape:
-                                              //         const RoundedRectangleBorder(
-                                              //             borderRadius:
-                                              //                 BorderRadius.vertical(
-                                              //                     top: Radius
-                                              //                         .circular(
-                                              //                             16))),
-                                              //     builder: (context) {
-                                              //       return buildSheet();
-                                              //     });
+                                              // context.loaderOverlay.hide();
                                             } else {
                                               ScaffoldMessenger.of(context)
                                                   .showSnackBar(
@@ -683,7 +658,7 @@ class _MapViewState extends State<MapView> {
                                                       'Error Calculating Distance'),
                                                 ),
                                               );
-                                              context.loaderOverlay.hide();
+                                              // context.loaderOverlay.hide();
                                             }
                                           });
                                         }
@@ -706,7 +681,19 @@ class _MapViewState extends State<MapView> {
                                 ElevatedButton(
                                   onPressed: (_startAddress != '' &&
                                           _destinationAddress != '')
-                                      ? () {
+                                      ? () async {
+                                          if (steps.isNotEmpty &&
+                                              predictionsMadeOnce == false) {
+                                            context.loaderOverlay.show();
+                                            predictions =
+                                                await getPredictions();
+                                            context.loaderOverlay.hide();
+                                            predictionsMadeOnce = true;
+                                          } else {
+                                            if (steps.isEmpty) {
+                                              predictions.clear();
+                                            }
+                                          }
                                           (predictions.isNotEmpty)
                                               ? showModalBottomSheet(
                                                   context: context,

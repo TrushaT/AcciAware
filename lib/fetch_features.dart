@@ -51,6 +51,7 @@ List<dynamic> steps = [
   }
 ];
 
+// Gets features and returns predictions
 Future<Map> getFeatures(List<dynamic> steps) async {
   Map<String, dynamic>? predictions = {};
 
