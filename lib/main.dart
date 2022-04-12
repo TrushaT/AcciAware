@@ -653,9 +653,24 @@ class _MapViewState extends State<MapView> {
                                             } else {
                                               ScaffoldMessenger.of(context)
                                                   .showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                      'Error Calculating Distance'),
+                                                SnackBar(
+                                                  content: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: const [
+                                                      Icon(
+                                                        Icons.warning,
+                                                        color: Colors.red,
+                                                      ),
+                                                      SizedBox(width: 15),
+                                                      Text(
+                                                        'Error: Source or Destination not found',
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               );
                                               // context.loaderOverlay.hide();
