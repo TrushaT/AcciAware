@@ -37,7 +37,7 @@ class MapView extends StatefulWidget {
   State<MapView> createState() => _MapViewState();
 }
 
-class _MapViewState extends State<MapView> {
+class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
   // CameraPosition _initialLocation = const CameraPosition(target: LatLng(0.0, 0.0));
   late GoogleMapController mapController;
 
@@ -69,6 +69,8 @@ class _MapViewState extends State<MapView> {
   List<dynamic> steps = [];
   Map<dynamic, dynamic> predictions = {};
   bool predictionsMadeOnce = false;
+
+  late TabController _controller;
 
   String convertToTitleCase(String text) {
     if (text.length <= 1) {
@@ -368,6 +370,7 @@ class _MapViewState extends State<MapView> {
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _controller = TabController(vsync: this, length: 2);
   }
 
   @override
@@ -424,51 +427,149 @@ class _MapViewState extends State<MapView> {
         maxChildSize: 0.85,
         minChildSize: 0.5,
         expand: false,
-        builder: (_, controller) => Column(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    height: 5.0,
-                    width: 70.0,
-                    decoration: BoxDecoration(
-                        color: Colors.grey[400],
-                        borderRadius: BorderRadius.circular(10.0)),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    'Roads with Accident Chance %',
-                    style: TextStyle(fontSize: 20),
-                  ),
-                ),
-                const SizedBox(height: 10),
-              ],
+        builder: (_, controller) => Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16.0),
+                topRight: Radius.circular(16.0),
+              ),
             ),
-            Expanded(
-              child: ListView.builder(
-                  controller: controller,
-                  itemCount: predictions.length * 2,
-                  padding: const EdgeInsets.all(16.0),
-                  itemBuilder: (BuildContext context, int i) {
-                    if (i.isOdd) {
-                      return const Divider();
-                    }
-                    final index = i ~/ 2;
-                    List keys = predictions.keys.toList();
-                    return _buildRow(keys[index]);
-                  }),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
+            child: DefaultTabController(
+                length: 2,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      TabBar(
+                        tabs: [
+                          Tab(
+                              icon: Icon(
+                            Icons.directions_car,
+                            color: Colors.black,
+                          )),
+                          Tab(
+                              icon: Icon(
+                            Icons.directions_transit,
+                            color: Colors.black,
+                          )),
+                        ],
+                      ),
+                      Expanded(
+                        child: TabBarView(
+                          controller: _controller,
+                          children: <Widget>[
+                            Expanded(
+                              child: ListView.builder(
+                                  controller: controller,
+                                  itemCount: predictions.length * 2,
+                                  padding: const EdgeInsets.all(16.0),
+                                  itemBuilder: (BuildContext context, int i) {
+                                    if (i.isOdd) {
+                                      return const Divider();
+                                    }
+                                    final index = i ~/ 2;
+                                    List keys = predictions.keys.toList();
+                                    return _buildRow(keys[index]);
+                                  }),
+                            ),
+                            Column(
+                              children: <Widget>[
+                                Text(
+                                  'the second tab view',
+                                  style: TextStyle(fontSize: 24),
+                                ),
+                                SizedBox(height: 26),
+                                Container(
+                                    height: 73,
+                                    width:
+                                        MediaQuery.of(context).size.width - 24,
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(5),
+                                        color: Colors.blue,
+                                        border: Border.all(
+                                            width: 0.5,
+                                            color: Colors.redAccent)),
+                                    child: Align(
+                                      alignment: Alignment.center,
+                                      child: TextField(
+                                        maxLength: 30,
+                                        enableInteractiveSelection: false,
+                                        keyboardType: TextInputType.number,
+                                        style: TextStyle(height: 1.6),
+                                        cursorColor: Colors.green[800],
+                                        textAlign: TextAlign.center,
+                                        autofocus: false,
+                                        decoration: InputDecoration(
+                                          border: InputBorder.none,
+                                          hintText: 'Credit',
+                                          counterText: "",
+                                        ),
+                                      ),
+                                    )),
+                              ],
+                            )
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                ))),
+        // Padding(
+        //   padding: MediaQuery.of(context).viewInsets,
+        //   child: Container(
+        //     child: Column(children: [
+        //       Column(
+        //         crossAxisAlignment: CrossAxisAlignment.center,
+        //         children: [
+        //           Align(
+        //             alignment: Alignment.topCenter,
+        //             child: Container(
+        //               margin: const EdgeInsets.symmetric(vertical: 8),
+        //               height: 5.0,
+        //               width: 70.0,
+        //               decoration: BoxDecoration(
+        //                   color: Colors.grey[400],
+        //                   borderRadius: BorderRadius.circular(10.0)),
+        //             ),
+        //           ),
+        //           const SizedBox(height: 14),
+        //           const Padding(
+        //             padding: EdgeInsets.symmetric(horizontal: 24),
+        //             child: Text(
+        //               'Roads with Accident Chance %',
+        //               style: TextStyle(fontSize: 20),
+        //             ),
+        //           ),
+        //           const SizedBox(height: 10),
+        //         ],
+        //       ),
+        // Expanded(
+        //   child: ListView.builder(
+        //       controller: controller,
+        //       itemCount: predictions.length * 2,
+        //       padding: const EdgeInsets.all(16.0),
+        //       itemBuilder: (BuildContext context, int i) {
+        //         if (i.isOdd) {
+        //           return const Divider();
+        //         }
+        //         final index = i ~/ 2;
+        //         List keys = predictions.keys.toList();
+        //         return _buildRow(keys[index]);
+        //       }),
+        // ),
+        // const SizedBox(height: 16),
+        // ],
+        // ),
+
+        // ]
       );
+      ;
     }
 
     return LoaderOverlay(
