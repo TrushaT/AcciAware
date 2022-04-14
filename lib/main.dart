@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:acciaware/fetch_features.dart';
 import 'package:acciaware/info_services.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoding/geocoding.dart';
