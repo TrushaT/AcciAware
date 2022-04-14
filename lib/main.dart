@@ -38,7 +38,6 @@ class MapView extends StatefulWidget {
 }
 
 class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
-  // CameraPosition _initialLocation = const CameraPosition(target: LatLng(0.0, 0.0));
   late GoogleMapController mapController;
 
   late Position _currentPosition;
@@ -67,10 +66,14 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
 
   Map values = {};
   List<dynamic> steps = [];
-  Map<dynamic, dynamic> predictions = {};
+  // Map<dynamic, dynamic> predictions = {};
   bool predictionsMadeOnce = false;
 
-  late TabController _controller;
+  int no_of_routes = 1;
+  List<dynamic> preds = [];
+
+  late TabController tabcontroller;
+  Color indicatorColor = Colors.blue;
 
   String convertToTitleCase(String text) {
     if (text.length <= 1) {
@@ -276,22 +279,6 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
       await _createPolylines(startLatitude, startLongitude, destinationLatitude,
           destinationLongitude);
 
-      // double totalDistance = 0.0;
-
-      // Calculating the total distance by adding the distance
-      // between small segments
-      /* for (int i = 0; i < polylineCoordinates.length - 1; i++) {
-        totalDistance += _coordinateDistance(
-          polylineCoordinates[i].latitude,
-          polylineCoordinates[i].longitude,
-          polylineCoordinates[i + 1].latitude,
-          polylineCoordinates[i + 1].longitude,
-        );
-      }
-      setState(() {
-        _placeDistance = totalDistance.toStringAsFixed(2);
-      }); */
-
       return true;
     } catch (e) {
       print("ERROR CALCULATING DISTANCE");
@@ -300,21 +287,13 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
     return false;
   }
 
-  // Formula for calculating distance between two coordinates
-  // https://stackoverflow.com/a/54138876/11910277
-  /*  double _coordinateDistance(lat1, lon1, lat2, lon2) {
-    var p = 0.017453292519943295;
-    var c = cos;
-    var a = 0.5 -
-        c((lat2 - lat1) * p) / 2 +
-        c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
-    return 12742 * asin(sqrt(a));
-  } */
-
 // Get predictions for a route
   getPredictions() async {
-    var preds = await getFeatures(steps);
-    print(preds);
+    for (var i = 0; i < no_of_routes; i++) {
+      var pred = await getFeatures(steps[i]);
+      preds.add(pred);
+    }
+    print("PREDS CALCULATED");
     return preds;
   }
 
@@ -346,8 +325,20 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
     }
     // print(result);
 
-    steps = values["routes"][0]["legs"][0]["steps"];
+    no_of_routes = min(values["routes"].length, 3);
+    print("NO OF ROUTES");
+    print(no_of_routes);
+
+    tabcontroller = TabController(vsync: this, length: no_of_routes);
+
+    // steps = values["routes"][0]["legs"][0]["steps"];
+    for (var i = 0; i < no_of_routes; i++) {
+      var step = values["routes"][i]["legs"][0]["steps"];
+      steps.add(step);
+    }
     // print(steps);
+    print("NO OF STEPS");
+    print(steps.length);
 
     if (result.points.isNotEmpty) {
       for (var point in result.points) {
@@ -370,7 +361,12 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     _getCurrentLocation();
-    _controller = TabController(vsync: this, length: 2);
+  }
+
+  @override
+  void dispose() {
+    tabcontroller.dispose();
+    super.dispose();
   }
 
   @override
@@ -378,7 +374,7 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
 
-    Widget _buildRow(String name) {
+    Widget _buildRow(int index, String name) {
       return Card(
           elevation: 3,
           child: ListTile(
@@ -388,31 +384,31 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
                   : convertToTitleCase(name),
               style: const TextStyle(fontSize: 18.0),
             ),
-            subtitle: (predictions[name]["outcome"] == "Safe")
+            subtitle: (preds[index][name]["outcome"] == "Safe")
                 ? Text(
-                    predictions[name]["outcome"],
+                    preds[index][name]["outcome"],
                     style: const TextStyle(
                       fontSize: 14.0,
                       color: Colors.green,
                     ),
                   )
                 : Text(
-                    predictions[name]["outcome"],
+                    preds[index][name]["outcome"],
                     style: const TextStyle(
                       fontSize: 14.0,
                       color: Colors.red,
                     ),
                   ),
-            trailing: (predictions[name]["outcome"] == "Safe")
+            trailing: (preds[index][name]["outcome"] == "Safe")
                 ? Text(
-                    predictions[name]["accident_chance"].toString() + "%",
+                    preds[index][name]["accident_chance"].toString() + "%",
                     style: const TextStyle(
                       fontSize: 18.0,
                       color: Colors.green,
                     ),
                   )
                 : Text(
-                    predictions[name]["accident_chance"].toString() + "%",
+                    preds[index][name]["accident_chance"].toString() + "%",
                     style: const TextStyle(
                       fontSize: 18.0,
                       color: Colors.red,
@@ -421,155 +417,95 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
           ));
     }
 
+    pageBuilder(BuildContext context, int index, ScrollController controller) {
+      return Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+                controller: controller,
+                itemCount: preds[index].length * 2,
+                padding: const EdgeInsets.all(16.0),
+                itemBuilder: (BuildContext context, int i) {
+                  if (i.isOdd) {
+                    return const Divider();
+                  }
+                  final idx = i ~/ 2;
+                  List keys = preds[index].keys.toList();
+                  return _buildRow(index, keys[idx]);
+                }),
+          ),
+          const SizedBox(height: 60)
+        ],
+      );
+    }
+
+    tabBuilder(BuildContext context, int index) {
+      return Tab(
+        icon: Text(
+          'Route ${index + 1}',
+          style: const TextStyle(
+            fontSize: 18,
+            color: Colors.black,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      );
+    }
+
     Widget buildSheet() {
       return DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        maxChildSize: 0.85,
-        minChildSize: 0.5,
-        expand: false,
-        builder: (_, controller) => Container(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16.0),
-                topRight: Radius.circular(16.0),
-              ),
-            ),
-            child: DefaultTabController(
-                length: 2,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      TabBar(
-                        tabs: [
-                          Tab(
-                              icon: Icon(
-                            Icons.directions_car,
-                            color: Colors.black,
-                          )),
-                          Tab(
-                              icon: Icon(
-                            Icons.directions_transit,
-                            color: Colors.black,
-                          )),
-                        ],
+          initialChildSize: 0.6,
+          maxChildSize: 0.85,
+          minChildSize: 0.5,
+          expand: false,
+          builder: (_, controller) => DefaultTabController(
+              length: no_of_routes,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        height: 5.0,
+                        width: 70.0,
+                        decoration: BoxDecoration(
+                            color: Colors.grey[400],
+                            borderRadius: BorderRadius.circular(10.0)),
                       ),
-                      Expanded(
-                        child: TabBarView(
-                          controller: _controller,
-                          children: <Widget>[
-                            Expanded(
-                              child: ListView.builder(
-                                  controller: controller,
-                                  itemCount: predictions.length * 2,
-                                  padding: const EdgeInsets.all(16.0),
-                                  itemBuilder: (BuildContext context, int i) {
-                                    if (i.isOdd) {
-                                      return const Divider();
-                                    }
-                                    final index = i ~/ 2;
-                                    List keys = predictions.keys.toList();
-                                    return _buildRow(keys[index]);
-                                  }),
-                            ),
-                            Column(
-                              children: <Widget>[
-                                Text(
-                                  'the second tab view',
-                                  style: TextStyle(fontSize: 24),
-                                ),
-                                SizedBox(height: 26),
-                                Container(
-                                    height: 73,
-                                    width:
-                                        MediaQuery.of(context).size.width - 24,
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(5),
-                                        color: Colors.blue,
-                                        border: Border.all(
-                                            width: 0.5,
-                                            color: Colors.redAccent)),
-                                    child: Align(
-                                      alignment: Alignment.center,
-                                      child: TextField(
-                                        maxLength: 30,
-                                        enableInteractiveSelection: false,
-                                        keyboardType: TextInputType.number,
-                                        style: TextStyle(height: 1.6),
-                                        cursorColor: Colors.green[800],
-                                        textAlign: TextAlign.center,
-                                        autofocus: false,
-                                        decoration: InputDecoration(
-                                          border: InputBorder.none,
-                                          hintText: 'Credit',
-                                          counterText: "",
-                                        ),
-                                      ),
-                                    )),
-                              ],
-                            )
-                          ],
+                    ),
+                    const SizedBox(height: 14),
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          'Roads with Accident Chance %',
+                          style: TextStyle(fontSize: 20),
                         ),
-                      )
-                    ],
-                  ),
-                ))),
-        // Padding(
-        //   padding: MediaQuery.of(context).viewInsets,
-        //   child: Container(
-        //     child: Column(children: [
-        //       Column(
-        //         crossAxisAlignment: CrossAxisAlignment.center,
-        //         children: [
-        //           Align(
-        //             alignment: Alignment.topCenter,
-        //             child: Container(
-        //               margin: const EdgeInsets.symmetric(vertical: 8),
-        //               height: 5.0,
-        //               width: 70.0,
-        //               decoration: BoxDecoration(
-        //                   color: Colors.grey[400],
-        //                   borderRadius: BorderRadius.circular(10.0)),
-        //             ),
-        //           ),
-        //           const SizedBox(height: 14),
-        //           const Padding(
-        //             padding: EdgeInsets.symmetric(horizontal: 24),
-        //             child: Text(
-        //               'Roads with Accident Chance %',
-        //               style: TextStyle(fontSize: 20),
-        //             ),
-        //           ),
-        //           const SizedBox(height: 10),
-        //         ],
-        //       ),
-        // Expanded(
-        //   child: ListView.builder(
-        //       controller: controller,
-        //       itemCount: predictions.length * 2,
-        //       padding: const EdgeInsets.all(16.0),
-        //       itemBuilder: (BuildContext context, int i) {
-        //         if (i.isOdd) {
-        //           return const Divider();
-        //         }
-        //         final index = i ~/ 2;
-        //         List keys = predictions.keys.toList();
-        //         return _buildRow(keys[index]);
-        //       }),
-        // ),
-        // const SizedBox(height: 16),
-        // ],
-        // ),
-
-        // ]
-      );
-      ;
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TabBar(
+                      controller: tabcontroller,
+                      indicatorColor: Colors.blue,
+                      tabs: List.generate(
+                          no_of_routes, (index) => tabBuilder(context, index)),
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                          controller: tabcontroller,
+                          children: List.generate(
+                              no_of_routes,
+                              (index) =>
+                                  pageBuilder(context, index, controller))),
+                    )
+                  ],
+                ),
+              )));
     }
 
     return LoaderOverlay(
@@ -801,16 +737,15 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
                                           if (steps.isNotEmpty &&
                                               predictionsMadeOnce == false) {
                                             context.loaderOverlay.show();
-                                            predictions =
-                                                await getPredictions();
+                                            preds = await getPredictions();
                                             context.loaderOverlay.hide();
                                             predictionsMadeOnce = true;
                                           } else {
                                             if (steps.isEmpty) {
-                                              predictions.clear();
+                                              preds.clear();
                                             }
                                           }
-                                          (predictions.isNotEmpty)
+                                          (preds.isNotEmpty)
                                               ? showModalBottomSheet(
                                                   context: context,
                                                   isScrollControlled: true,

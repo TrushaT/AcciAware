@@ -12,7 +12,7 @@ class Services {
   Future<Map> getDirectionsinfo(double startLatitude, double startLongitude,
       double destinationLatitude, double destinationLongitude) async {
     String url =
-        "https://maps.googleapis.com/maps/api/directions/json?origin=${startLatitude},${startLongitude}&destination=${destinationLatitude},${destinationLongitude}&key=$apiKey";
+        "https://maps.googleapis.com/maps/api/directions/json?origin=${startLatitude},${startLongitude}&destination=${destinationLatitude},${destinationLongitude}&alternatives=true&key=$apiKey";
     http.Response response = await http.get(Uri.parse(url));
     var values = jsonDecode(response.body);
     // print(values);
