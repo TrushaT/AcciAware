@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
@@ -38,7 +40,7 @@ class MapView extends StatefulWidget {
   State<MapView> createState() => _MapViewState();
 }
 
-class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
+class _MapViewState extends State<MapView> with TickerProviderStateMixin {
   late GoogleMapController mapController;
 
   late Position _currentPosition;
@@ -72,6 +74,7 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
 
   int no_of_routes = 1;
   List<dynamic> preds = [];
+  Map predScores = {};
 
   late TabController tabcontroller;
   Color indicatorColor = Colors.blue;
@@ -288,17 +291,29 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
     return false;
   }
 
-// Get predictions for a route
+  // Get predictions for all routes
   getPredictions() async {
     for (var i = 0; i < no_of_routes; i++) {
       var pred = await getFeatures(steps[i]);
       preds.add(pred);
+      print(pred);
+      // for (var v in pred.values) {
+      //   print(v['accident_chance']);
+      //   print(v['accident_chance'].runtimeType);
+      // }
+      double sum = 0;
+      double count = 0;
+      for (var v in pred.values) {
+        sum += v['accident_chance'];
+        count += 1;
+      }
+      predScores['Route ${i + 1}'] = (sum / count);
     }
     print("PREDS CALCULATED");
     return preds;
   }
 
-// Create the polylines for showing the route between two places
+  // Create the polylines for showing the route between two places
   _createPolylines(
     double startLatitude,
     double startLongitude,
@@ -393,13 +408,19 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
                       color: Colors.green,
                     ),
                   )
-                : Text(
-                    preds[index][name]["outcome"],
-                    style: const TextStyle(
-                      fontSize: 14.0,
-                      color: Colors.red,
-                    ),
-                  ),
+                : (preds[index][name]["outcome"] == "Injurious")
+                    ? Text(
+                        preds[index][name]["outcome"],
+                        style: const TextStyle(
+                            fontSize: 14.0, color: Colors.orange),
+                      )
+                    : Text(
+                        preds[index][name]["outcome"],
+                        style: const TextStyle(
+                          fontSize: 14.0,
+                          color: Colors.red,
+                        ),
+                      ),
             trailing: (preds[index][name]["outcome"] == "Safe")
                 ? Text(
                     preds[index][name]["accident_chance"].toString() + "%",
@@ -408,16 +429,25 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
                       color: Colors.green,
                     ),
                   )
-                : Text(
-                    preds[index][name]["accident_chance"].toString() + "%",
-                    style: const TextStyle(
-                      fontSize: 18.0,
-                      color: Colors.red,
-                    ),
-                  ),
+                : (preds[index][name]["outcome"] == "Injurious")
+                    ? Text(
+                        preds[index][name]["accident_chance"].toString() + "%",
+                        style: const TextStyle(
+                          fontSize: 18.0,
+                          color: Colors.orange,
+                        ),
+                      )
+                    : Text(
+                        preds[index][name]["accident_chance"].toString() + "%",
+                        style: const TextStyle(
+                          fontSize: 18.0,
+                          color: Colors.red,
+                        ),
+                      ),
           ));
     }
 
+    // For each route, display list of roads
     pageBuilder(BuildContext context, int index, ScrollController controller) {
       return Column(
         children: [
@@ -435,20 +465,42 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
                   return _buildRow(index, keys[idx]);
                 }),
           ),
-          const SizedBox(height: 60)
+          const SizedBox(height: 16),
         ],
       );
     }
 
+    // Each tab of Tab Bar
     tabBuilder(BuildContext context, int index) {
       return Tab(
-        icon: Text(
-          'Route ${index + 1}',
-          style: const TextStyle(
-            fontSize: 18,
-            color: Colors.black,
-            fontWeight: FontWeight.w400,
-          ),
+        icon: Column(
+          children: [
+            Text(
+              'Route ${index + 1}',
+              style: const TextStyle(
+                fontSize: 18,
+                color: Colors.black,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            (predScores['Route ${index + 1}'] < 50)
+                ? Text(
+                    '${predScores['Route ${index + 1}'].toStringAsFixed(1)}%',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.green,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  )
+                : Text(
+                    '${predScores['Route ${index + 1}'].toStringAsFixed(1)}%',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.red,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+          ],
         ),
       );
     }
@@ -484,7 +536,7 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 24),
                         child: Text(
-                          'Roads with Accident Chance %',
+                          'Routes with Accident Chance',
                           style: TextStyle(fontSize: 20),
                         ),
                       ),
@@ -496,6 +548,15 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
                       tabs: List.generate(
                           no_of_routes, (index) => tabBuilder(context, index)),
                     ),
+                    // const SizedBox(height: 12),
+                    // const Center(
+                    //   child: Padding(
+                    //       padding: EdgeInsets.symmetric(horizontal: 24),
+                    //       child: Text(
+                    //         'Roads                Accident Chance',
+                    //         style: TextStyle(fontSize: 20),
+                    //       )),
+                    // ),
                     Expanded(
                       child: TabBarView(
                           controller: tabcontroller,
@@ -514,6 +575,79 @@ class _MapViewState extends State<MapView> with SingleTickerProviderStateMixin {
         height: height,
         width: width,
         child: Scaffold(
+          appBar: AppBar(),
+          drawer: SafeArea(
+            child: Drawer(
+              child: ListView(
+                // Important: Remove any padding from the ListView.
+                padding: EdgeInsets.zero,
+                children: <Widget>[
+                  const DrawerHeader(
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                    ),
+                    child: Center(
+                      child: Expanded(
+                        flex: 6,
+                        child: Text(
+                          "AcciAware",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 25,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    title: const Text("Home"),
+                    leading: IconButton(
+                      icon: const Icon(Icons.home),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                    // onTap: () {
+                    //   Navigator.of(context).pop();
+                    //   Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    //       builder: (BuildContext context) => MapView()));
+                    // },
+                  ),
+                  Divider(color: Colors.grey),
+                  ListTile(
+                    title: const Text("Governments"),
+                    leading: IconButton(
+                      icon: const Icon(Icons.home),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                    // onTap: () {
+                    //   Navigator.of(context).pop();
+                    //   Navigator.of(context).push(MaterialPageRoute(
+                    //       builder: (BuildContext context) => MapView()));
+                    // },
+                  ),
+                  Divider(color: Colors.grey),
+                  ListTile(
+                    title: const Text("Past Accident Case"),
+                    leading: IconButton(
+                      icon: const Icon(Icons.home),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                    // onTap: () {
+                    //   Navigator.of(context).pop();
+                    //   Navigator.of(context).push(MaterialPageRoute(
+                    //       builder: (BuildContext context) => MapView()));
+                    // },
+                  ),
+                  Divider(color: Colors.grey),
+                ],
+              ),
+            ),
+          ),
           body: Stack(
             children: [
               // child 1
