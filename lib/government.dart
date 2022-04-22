@@ -83,7 +83,7 @@ class _GovernmentState extends State<Government> {
           content: Container(
             child: Column(
               children: [
-                SizedBox(
+                const SizedBox(
                   height: 8,
                 ),
                 ElevatedButton(
@@ -105,11 +105,11 @@ class _GovernmentState extends State<Government> {
                       // User canceled the picker
                     }
                   },
-                  child: Text('Choose File'),
+                  child: const Text('Choose File'),
                 ),
                 (fileChosen != null)
                     ? Text(fileChosen!)
-                    : Text('No file chosen yet')
+                    : const Text('No file chosen yet')
               ],
             ),
           ),
@@ -127,7 +127,7 @@ class _GovernmentState extends State<Government> {
           content: Container(
             child: Column(
               children: [
-                SizedBox(
+                const SizedBox(
                   height: 8,
                 ),
                 ElevatedButton(
@@ -149,11 +149,11 @@ class _GovernmentState extends State<Government> {
                       // User canceled the picker
                     }
                   },
-                  child: Text('Choose File'),
+                  child: const Text('Choose File'),
                 ),
                 (file2Chosen != null)
                     ? Text(file2Chosen!)
-                    : Text('No file chosen yet')
+                    : const Text('No file chosen yet')
               ],
             ),
           ),
@@ -173,8 +173,8 @@ class _GovernmentState extends State<Government> {
               return InputDecorator(
                 decoration: InputDecoration(
                     // labelStyle: textStyle,
-                    errorStyle:
-                        TextStyle(color: Colors.redAccent, fontSize: 16.0),
+                    errorStyle: const TextStyle(
+                        color: Colors.redAccent, fontSize: 16.0),
                     hintText: 'Please select expense',
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(5.0))),
@@ -217,7 +217,7 @@ class _GovernmentState extends State<Government> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text("Governments"),
+          title: const Text("Governments"),
         ),
         drawer: SafeArea(
           child: Drawer(
@@ -246,16 +246,16 @@ class _GovernmentState extends State<Government> {
                     onPressed: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (BuildContext context) => MapView()));
+                          builder: (BuildContext context) => const MapView()));
                     },
                   ),
                   onTap: () {
                     Navigator.of(context).pop();
                     Navigator.of(context).pushReplacement(MaterialPageRoute(
-                        builder: (BuildContext context) => MapView()));
+                        builder: (BuildContext context) => const MapView()));
                   },
                 ),
-                Divider(color: Colors.grey),
+                const Divider(color: Colors.grey),
                 ListTile(
                   title: const Text("Governments"),
                   leading: IconButton(
@@ -263,16 +263,17 @@ class _GovernmentState extends State<Government> {
                     onPressed: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (BuildContext context) => Government()));
+                          builder: (BuildContext context) =>
+                              const Government()));
                     },
                   ),
                   onTap: () {
                     Navigator.of(context).pop();
                     Navigator.of(context).pushReplacement(MaterialPageRoute(
-                        builder: (BuildContext context) => Government()));
+                        builder: (BuildContext context) => const Government()));
                   },
                 ),
-                Divider(color: Colors.grey),
+                const Divider(color: Colors.grey),
                 ListTile(
                   title: const Text("Past Accident Case"),
                   leading: IconButton(
@@ -280,16 +281,17 @@ class _GovernmentState extends State<Government> {
                     onPressed: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (BuildContext context) => Government()));
+                          builder: (BuildContext context) =>
+                              const Government()));
                     },
                   ),
                   onTap: () {
                     Navigator.of(context).pop();
                     Navigator.of(context).pushReplacement(MaterialPageRoute(
-                        builder: (BuildContext context) => Government()));
+                        builder: (BuildContext context) => const Government()));
                   },
                 ),
-                Divider(color: Colors.grey),
+                const Divider(color: Colors.grey),
               ],
             ),
           ),
@@ -297,35 +299,6 @@ class _GovernmentState extends State<Government> {
         body: Container(
             child: ListView(
           children: <Widget>[
-            Card(
-              elevation: 5,
-              child: Padding(
-                padding: EdgeInsets.all(7),
-                child: Stack(children: <Widget>[
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Stack(
-                      children: <Widget>[
-                        Padding(
-                            padding: const EdgeInsets.only(left: 10, top: 5),
-                            child: Column(
-                              children: <Widget>[
-                                Row(
-                                  children: const <Widget>[
-                                    Padding(
-                                      padding: EdgeInsets.only(left: 15.0),
-                                      child: Align(child: Text("Governments")),
-                                    )
-                                  ],
-                                )
-                              ],
-                            ))
-                      ],
-                    ),
-                  )
-                ]),
-              ),
-            ),
             Card(
               child: Stepper(
                 type: StepperType.vertical,
@@ -339,7 +312,7 @@ class _GovernmentState extends State<Government> {
                   } else {
                     print('Submitted');
                     Navigator.of(context).push(MaterialPageRoute(
-                        builder: (BuildContext context) => DelhiView()));
+                        builder: (BuildContext context) => const DelhiView()));
                   }
                 },
                 onStepCancel: () {
@@ -386,7 +359,7 @@ class _GovernmentState extends State<Government> {
               ),
             ),
           ],
-          padding: EdgeInsets.all(10),
+          padding: const EdgeInsets.all(10),
           shrinkWrap: true,
         )));
   }
