@@ -10,6 +10,7 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:html/parser.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 
 class DelhiView extends StatefulWidget {
@@ -53,20 +54,91 @@ class _DelhiViewState extends State<DelhiView> with TickerProviderStateMixin {
   int no_of_routes = 1;
   List<dynamic> preds = [];
   Map predScores = {};
+  List<dynamic> roadNames = [];
 
   late TabController tabcontroller;
   Color indicatorColor = Colors.blue;
 
-  List roads1 = [
-    'LALA GANESH DASS KHATRI MARG',
-    'SARDAR BAHADUR SINGH MARG',
-    'NAJAFGARH ROAD',
-    'SHIVAJI MARG FLYOVER',
-    'SATGURU RAM SINGH ROAD ',
-    'OLD ROTAK ROAD ',
-    'WEST MOTI BAGH ',
-    'AZAD RD',
+  Map delhi_predScores = {"Route 1": 22.50, "Route 2": 23.56, "Route 3": 24};
+
+  List<dynamic> delhi_preds = [
+    {
+      "Lala Ganesh Dass Khatri Marg": {
+        "accident_chance": 24.64,
+        "outcome": "Safe"
+      },
+      "Sardar Bahadur Singh Marg ": {
+        "accident_chance": 24.63,
+        "outcome": "Safe"
+      },
+      "Najafgarh Road ": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Shivaji Marg Flyover": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Satguru Ram Singh Road ": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Old Rotak Road": {"accident_chance": 64.64, "outcome": "Safe"},
+      "West Moti Bagh ": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Azad Rd": {"accident_chance": 64.64, "outcome": "Safe"},
+    },
+    {
+      "Widow Colony": {"accident_chance": 24.64, "outcome": "Safe"},
+      "Lala Ganesh Dass Khatri Marg": {
+        "accident_chance": 24.63,
+        "outcome": "Safe"
+      },
+      "Mbs Nagar Rd ": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Outer Ring Rd": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Raghubir Nagar Rd": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Baba Ramdev Marg": {"accident_chance": 64.64, "outcome": "Safe"},
+      " Rotak Road ": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Vir Banda Bairagi Marg": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Old Rohtak Rd": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Azad Rd": {"accident_chance": 64.64, "outcome": "Safe"},
+    },
+    {
+      "Lala Ganesh Dass Khatri Marg": {
+        "accident_chance": 24.64,
+        "outcome": "Safe"
+      },
+      "Sardar Bahadur Singh Marg ": {
+        "accident_chance": 24.63,
+        "outcome": "Safe"
+      },
+      "Mall Road ": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Najafgarh Road ": {"accident_chance": 64.64, "outcome": "Safe"},
+      " Shivaji Marg Flyover": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Mahatma Gandhi Marg": {"accident_chance": 64.64, "outcome": "Safe"},
+      " Rotak Road ": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Vir Banda Bairagi Marg": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Old Rohtak Rd": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Azad Rd": {"accident_chance": 64.64, "outcome": "Safe"},
+    },
+    {
+      "Lala Ganesh Dass Khatri Marg": {
+        "accident_chance": 24.64,
+        "outcome": "Safe"
+      },
+      "Sardar Bahadur Singh Marg ": {
+        "accident_chance": 24.63,
+        "outcome": "Safe"
+      },
+      "Najafgarh Road ": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Shivaji Marg Flyover": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Satguru Ram Singh Road ": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Old Rotak Road": {"accident_chance": 64.64, "outcome": "Safe"},
+      "West Moti Bagh ": {"accident_chance": 64.64, "outcome": "Safe"},
+      "Azad Rd": {"accident_chance": 64.64, "outcome": "Safe"},
+    },
   ];
+
+  // List roads1 = [
+  //   'LALA GANESH DASS KHATRI MARG',
+  //   'SARDAR BAHADUR SINGH MARG',
+  //   'NAJAFGARH ROAD',
+  //   'SHIVAJI MARG FLYOVER',
+  //   'SATGURU RAM SINGH ROAD ',
+  //   'OLD ROTAK ROAD ',
+  //   'WEST MOTI BAGH ',
+  //   'AZAD RD',
+  // ];
 
   String convertToTitleCase(String text) {
     if (text.length <= 1) {
@@ -281,26 +353,26 @@ class _DelhiViewState extends State<DelhiView> with TickerProviderStateMixin {
   }
 
   // Get predictions for all routes
-  getPredictions() async {
-    for (var i = 0; i < no_of_routes; i++) {
-      var pred = await getFeatures(steps[i]);
-      preds.add(pred);
-      print(pred);
-      // for (var v in pred.values) {
-      //   print(v['accident_chance']);
-      //   print(v['accident_chance'].runtimeType);
-      // }
-      double sum = 0;
-      double count = 0;
-      for (var v in pred.values) {
-        sum += v['accident_chance'];
-        count += 1;
-      }
-      predScores['Route ${i + 1}'] = (sum / count);
-    }
-    print("PREDS CALCULATED");
-    return preds;
-  }
+  // getPredictions() async {
+  //   for (var i = 0; i < no_of_routes; i++) {
+  //     var pred = await getFeatures(steps[i]);
+  //     preds.add(pred);
+  //     print(pred);
+  //     // for (var v in pred.values) {
+  //     //   print(v['accident_chance']);
+  //     //   print(v['accident_chance'].runtimeType);
+  //     // }
+  //     double sum = 0;
+  //     double count = 0;
+  //     for (var v in pred.values) {
+  //       sum += v['accident_chance'];
+  //       count += 1;
+  //     }
+  //     predScores['Route ${i + 1}'] = (sum / count);
+  //   }
+  //   print("PREDS CALCULATED");
+  //   return preds;
+  // }
 
   // Create the polylines for showing the route between two places
   _createPolylines(
@@ -389,45 +461,48 @@ class _DelhiViewState extends State<DelhiView> with TickerProviderStateMixin {
                   : convertToTitleCase(name),
               style: const TextStyle(fontSize: 18.0),
             ),
-            subtitle: (preds[index][name]["outcome"] == "Safe")
+            subtitle: (delhi_preds[index][name]["outcome"] == "Safe")
                 ? Text(
-                    preds[index][name]["outcome"],
+                    delhi_preds[index][name]["outcome"],
                     style: const TextStyle(
                       fontSize: 14.0,
                       color: Colors.green,
                     ),
                   )
-                : (preds[index][name]["outcome"] == "Injurious")
+                : (delhi_preds[index][name]["outcome"] == "Injurious")
                     ? Text(
                         preds[index][name]["outcome"],
                         style: const TextStyle(
                             fontSize: 14.0, color: Colors.orange),
                       )
                     : Text(
-                        preds[index][name]["outcome"],
+                        delhi_preds[index][name]["outcome"],
                         style: const TextStyle(
                           fontSize: 14.0,
                           color: Colors.red,
                         ),
                       ),
-            trailing: (preds[index][name]["outcome"] == "Safe")
+            trailing: (delhi_preds[index][name]["outcome"] == "Safe")
                 ? Text(
-                    preds[index][name]["accident_chance"].toString() + "%",
+                    delhi_preds[index][name]["accident_chance"].toString() +
+                        "%",
                     style: const TextStyle(
                       fontSize: 18.0,
                       color: Colors.green,
                     ),
                   )
-                : (preds[index][name]["outcome"] == "Injurious")
+                : (delhi_preds[index][name]["outcome"] == "Injurious")
                     ? Text(
-                        preds[index][name]["accident_chance"].toString() + "%",
+                        delhi_preds[index][name]["accident_chance"].toString() +
+                            "%",
                         style: const TextStyle(
                           fontSize: 18.0,
                           color: Colors.orange,
                         ),
                       )
                     : Text(
-                        preds[index][name]["accident_chance"].toString() + "%",
+                        delhi_preds[index][name]["accident_chance"].toString() +
+                            "%",
                         style: const TextStyle(
                           fontSize: 18.0,
                           color: Colors.red,
@@ -443,15 +518,22 @@ class _DelhiViewState extends State<DelhiView> with TickerProviderStateMixin {
           Expanded(
             child: ListView.builder(
                 controller: controller,
-                itemCount: preds[index].length * 2,
+                itemCount: steps[index].length * 2,
                 padding: const EdgeInsets.all(16.0),
                 itemBuilder: (BuildContext context, int i) {
                   if (i.isOdd) {
                     return const Divider();
                   }
                   final idx = i ~/ 2;
-                  List keys = preds[index].keys.toList();
-                  return _buildRow(index, keys[idx]);
+                  var singleIns = steps[index]["html_instructions"];
+                  var document = parse(singleIns);
+                  var elements = document.getElementsByTagName('b');
+                  List ele = elements
+                      .map((element) => element.text.toLowerCase())
+                      .toList();
+                  roadNames.addAll(ele);
+                  print(roadNames);
+                  return _buildRow(index, roadNames[idx]);
                 }),
           ),
           const SizedBox(height: 16),
@@ -472,9 +554,9 @@ class _DelhiViewState extends State<DelhiView> with TickerProviderStateMixin {
                 fontWeight: FontWeight.w400,
               ),
             ),
-            (predScores['Route ${index + 1}'] < 50)
+            (delhi_predScores['Route ${index + 1}'] < 50)
                 ? Text(
-                    '${predScores['Route ${index + 1}'].toStringAsFixed(1)}%',
+                    '${delhi_predScores['Route ${index + 1}'].toStringAsFixed(1)}%',
                     style: const TextStyle(
                       fontSize: 16,
                       color: Colors.green,
@@ -482,7 +564,7 @@ class _DelhiViewState extends State<DelhiView> with TickerProviderStateMixin {
                     ),
                   )
                 : Text(
-                    '${predScores['Route ${index + 1}'].toStringAsFixed(1)}%',
+                    '${delhi_predScores['Route ${index + 1}'].toStringAsFixed(1)}%',
                     style: const TextStyle(
                       fontSize: 16,
                       color: Colors.red,
@@ -864,7 +946,7 @@ class _DelhiViewState extends State<DelhiView> with TickerProviderStateMixin {
                                           if (steps.isNotEmpty &&
                                               predictionsMadeOnce == false) {
                                             context.loaderOverlay.show();
-                                            preds = await getPredictions();
+                                            // preds = await getPredictions();
                                             context.loaderOverlay.hide();
                                             predictionsMadeOnce = true;
                                           } else {
@@ -872,7 +954,7 @@ class _DelhiViewState extends State<DelhiView> with TickerProviderStateMixin {
                                               preds.clear();
                                             }
                                           }
-                                          (preds.isNotEmpty)
+                                          (delhi_preds.isNotEmpty)
                                               ? showModalBottomSheet(
                                                   context: context,
                                                   isScrollControlled: true,
