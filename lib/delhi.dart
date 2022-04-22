@@ -1,13 +1,10 @@
-// ignore_for_file: constant_identifier_names
-
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:acciaware/fetch_features.dart';
 import 'package:acciaware/government.dart';
 import 'package:acciaware/info_services.dart';
-import 'package:flutter/gestures.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoding/geocoding.dart';
@@ -15,33 +12,13 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  // This widget is the root of your application.
+class DelhiView extends StatefulWidget {
+  const DelhiView({Key? key}) : super(key: key);
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Maps',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const MapView(),
-    );
-  }
+  State<DelhiView> createState() => _DelhiViewState();
 }
 
-class MapView extends StatefulWidget {
-  const MapView({Key? key}) : super(key: key);
-  @override
-  State<MapView> createState() => _MapViewState();
-}
-
-class _MapViewState extends State<MapView> with TickerProviderStateMixin {
+class _DelhiViewState extends State<DelhiView> with TickerProviderStateMixin {
   late GoogleMapController mapController;
 
   late Position _currentPosition;
@@ -79,6 +56,17 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
 
   late TabController tabcontroller;
   Color indicatorColor = Colors.blue;
+
+  List roads1 = [
+    'LALA GANESH DASS KHATRI MARG',
+    'SARDAR BAHADUR SINGH MARG',
+    'NAJAFGARH ROAD',
+    'SHIVAJI MARG FLYOVER',
+    'SATGURU RAM SINGH ROAD ',
+    'OLD ROTAK ROAD ',
+    'WEST MOTI BAGH ',
+    'AZAD RD',
+  ];
 
   String convertToTitleCase(String text) {
     if (text.length <= 1) {
@@ -604,13 +592,13 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                       onPressed: () {
                         Navigator.of(context).pop();
                         Navigator.of(context).pushReplacement(MaterialPageRoute(
-                            builder: (BuildContext context) => MapView()));
+                            builder: (BuildContext context) => DelhiView()));
                       },
                     ),
                     onTap: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (BuildContext context) => MapView()));
+                          builder: (BuildContext context) => DelhiView()));
                     },
                   ),
                   Divider(color: Colors.grey),
@@ -990,115 +978,3 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
     );
   }
 }
-
-// class MyHomePage extends StatefulWidget {
-//   const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-//   final String title;
-
-//   @override
-//   State<MyHomePage> createState() => _MyHomePageState();
-// }
-
-// class _MyHomePageState extends State<MyHomePage> {
-
-//   StreamSubscription? _locationSubscription;
-//   final Location _locationTracker = Location();
-//   Marker? marker;
-//   Circle? circle;
-//   GoogleMapController? _controller;
-
-//   static const CameraPosition initialLocation = CameraPosition(
-//     target: LatLng(19.0760, 72.8777),
-//     zoom: 14,
-//   );
-
-//   // ignore: prefer_typing_uninitialized_variables
-//   var cameraUpdate;
-
-//   Future<Uint8List> getMarker() async {
-//     ByteData byteData =
-//         await DefaultAssetBundle.of(context).load("assets/car_icon.png");
-//     return byteData.buffer.asUint8List();
-//   }
-
-//   void updateMarkerandCircle(LocationData newLocalData, Uint8List imageData) {
-//     LatLng latLng = LatLng(newLocalData.latitude!, newLocalData.longitude!);
-//     // ignore: unnecessary_this
-//     this.setState(() {
-//       marker = Marker(
-//           markerId: const MarkerId("home"),
-//           position: latLng,
-//           rotation: newLocalData.heading!,
-//           draggable: false,
-//           zIndex: 2, //marker above circle
-//           flat: true,
-//           anchor: const Offset(0.5, 0.5), //so circle and car both move
-//           icon: BitmapDescriptor.fromBytes(imageData));
-//       circle = Circle(
-//           circleId: const CircleId("car"),
-//           radius: newLocalData.accuracy!,
-//           zIndex: 1,
-//           strokeColor: Colors.blue,
-//           center: latLng,
-//           fillColor: Colors.blue.withAlpha(70));
-//     });
-//   }
-
-//   void getCurrentLocation() async {
-//     try {
-//       Uint8List imageData = await getMarker();
-//       var location = await _locationTracker.getLocation();
-
-//       updateMarkerandCircle(location, imageData);
-
-//       _locationSubscription?.cancel();
-
-//       _locationSubscription =
-//           _locationTracker.onLocationChanged.listen((newLocalData) {
-//         if (_controller != null) {
-//           _controller?.animateCamera(cameraUpdate.newCameraPosition(
-//               // ignore: unnecessary_new
-//               new CameraPosition(
-//                   bearing: 192.83,
-//                   target: LatLng(newLocalData.latitude!, newLocalData.longitude!),
-//                   tilt: 0,
-//                   zoom: 18.00)));
-//           updateMarkerandCircle(newLocalData, imageData);
-//         }
-//       });
-//     } on PlatformException catch (e) {
-//       if (e.code == 'PERMISSION_DENIED') {
-//         debugPrint("Permission Denied");
-//       }
-//     }
-//   }
-
-//   @override
-//   void dispose() {
-//     _locationSubscription?.cancel();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text(widget.title),
-//       ),
-//       body: GoogleMap(
-//         initialCameraPosition: initialLocation,
-//         markers: Set.of((marker != null) ? [marker!] : []),
-//         circles: Set.of((circle != null) ? [circle!] : []),
-//         onMapCreated: (GoogleMapController controller) {
-//           _controller = controller;
-//         },
-//       ),
-//       floatingActionButton: FloatingActionButton(
-//           child: const Icon(Icons.location_searching),
-//           onPressed: () {
-//             getCurrentLocation();
-//           }),
-//     );
-//   }
-// }
