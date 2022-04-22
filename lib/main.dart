@@ -7,6 +7,7 @@ import 'dart:math';
 import 'package:acciaware/fetch_features.dart';
 import 'package:acciaware/government.dart';
 import 'package:acciaware/info_services.dart';
+import 'package:acciaware/risky.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -632,19 +633,19 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                   ),
                   Divider(color: Colors.grey),
                   ListTile(
-                    title: const Text("Past Accident Case"),
+                    title: const Text("Past Accident Cases"),
                     leading: IconButton(
                       icon: const Icon(Icons.error),
                       onPressed: () {
                         Navigator.of(context).pop();
                         Navigator.of(context).pushReplacement(MaterialPageRoute(
-                            builder: (BuildContext context) => Government()));
+                            builder: (BuildContext context) => Risky()));
                       },
                     ),
                     onTap: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (BuildContext context) => Government()));
+                          builder: (BuildContext context) => Risky()));
                     },
                   ),
                   Divider(color: Colors.grey),

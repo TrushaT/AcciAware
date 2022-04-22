@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:acciaware/delhi.dart';
 import 'package:acciaware/main.dart';
+import 'package:acciaware/risky.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
@@ -275,20 +276,19 @@ class _GovernmentState extends State<Government> {
                 ),
                 const Divider(color: Colors.grey),
                 ListTile(
-                  title: const Text("Past Accident Case"),
+                  title: const Text("Past Accident Cases"),
                   leading: IconButton(
                     icon: const Icon(Icons.error),
                     onPressed: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (BuildContext context) =>
-                              const Government()));
+                          builder: (BuildContext context) => const Risky()));
                     },
                   ),
                   onTap: () {
                     Navigator.of(context).pop();
                     Navigator.of(context).pushReplacement(MaterialPageRoute(
-                        builder: (BuildContext context) => const Government()));
+                        builder: (BuildContext context) => const Risky()));
                   },
                 ),
                 const Divider(color: Colors.grey),

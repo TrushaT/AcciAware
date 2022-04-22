@@ -36,7 +36,7 @@ dependencies:
   csv: ^5.0.1
   geocode: ^1.0.1
   loader_overlay: ^2.0.6
-
+  getwidget: ^2.0.3
 
 
   
@@ -81,6 +81,7 @@ flutter:
   assets:
     - assets/car_icon.png
     - assets/road_records.csv
+    - assets/government.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
