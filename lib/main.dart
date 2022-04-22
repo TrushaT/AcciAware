@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:acciaware/data_visualization.dart';
 import 'package:acciaware/fetch_features.dart';
 import 'package:acciaware/government.dart';
 import 'package:acciaware/info_services.dart';
@@ -648,6 +649,22 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                     },
                   ),
                   Divider(color: Colors.grey),
+                  ListTile(
+                    title: const Text("Data Visualization"),
+                    leading: IconButton(
+                      icon: const Icon(Icons.pie_chart),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pushReplacement(MaterialPageRoute(
+                            builder: (BuildContext context) => DataVisualizer()));
+                      },
+                    ),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pushReplacement(MaterialPageRoute(
+                          builder: (BuildContext context) =>DataVisualizer()));
+                    },
+                  ),
                 ],
               ),
             ),
