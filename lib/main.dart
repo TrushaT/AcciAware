@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:acciaware/fetch_features.dart';
+import 'package:acciaware/government.dart';
 import 'package:acciaware/info_services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -587,8 +588,6 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                       color: Colors.blue,
                     ),
                     child: Center(
-                      child: Expanded(
-                        flex: 6,
                         child: Text(
                           "AcciAware",
                           style: TextStyle(
@@ -596,7 +595,6 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                             fontSize: 25,
                           ),
                         ),
-                      ),
                     ),
                   ),
                   ListTile(
@@ -620,6 +618,8 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                       icon: const Icon(Icons.home),
                       onPressed: () {
                         Navigator.of(context).pop();
+                        Navigator.of(context).pushReplacement(MaterialPageRoute(
+                            builder: (BuildContext context) => Government()));
                       },
                     ),
                     // onTap: () {
