@@ -90,6 +90,22 @@ class _DataVisualizerState extends State<DataVisualizer> {
                   },
                 ),
                 const Divider(color: Colors.grey),
+                ListTile(
+                    title: const Text("Data Visualization"),
+                    leading: IconButton(
+                      icon: const Icon(Icons.pie_chart),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pushReplacement(MaterialPageRoute(
+                            builder: (BuildContext context) => const DataVisualizer()));
+                      },
+                    ),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pushReplacement(MaterialPageRoute(
+                          builder: (BuildContext context) =>const DataVisualizer()));
+                    },
+                  ),
               ],
             ),
           ),
